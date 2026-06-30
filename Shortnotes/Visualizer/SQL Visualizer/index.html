@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QueryForge Pro — SQL Execution Engine v2</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --violet:#7c6df7;--violet-l:#a396f9;--violet-d:#5a4bd4;
+  --cyan:#38e5c5;--amber:#f5c842;--rose:#f26b7a;
+  --green:#4ade80;--orange:#fb923c;--blue:#60a5fa;
+  --mono:'JetBrains Mono',monospace;--display:'Syne',sans-serif;
+  --radius:10px;--radius-lg:16px;--trans:.3s;
+}
+[data-theme="dark"]{
+  --bg:#07080f;--bg2:#0e0f1a;--bg3:#13152a;--bg4:#191c33;
+  --surface:#1c1f38;--surface2:#22264a;
+  --border:#2a2e5a;--border2:#353a6e;
+  --text:#e8eaf4;--text2:#9fa3c8;--text3:#6468a0;
+  --input-bg:#07080f;--grid-c:rgba(42,46,90,0.35);
+  --shadow:0 4px 24px rgba(0,0,0,.55);
+  --card-hover:#191c33;
+}
+[data-theme="light"]{
+  --bg:#FFFAFA;--bg2:#ffffff;--bg3:#fff0f0;--bg4:#ffe8e8;
+  --surface:#ffffff;--surface2:#fff0f0;
+  --border:#f0d8d8;--border2:#e0b8b8;
+  --text:#1a0a0a;--text2:#4a2020;--text3:#906060;
+  --input-bg:#ffffff;--grid-c:rgba(200,150,150,0.15);
+  --shadow:0 4px 24px rgba(180,80,80,.08);
+  --card-hover:#fff0f0;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--display);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.6;transition:background var(--trans),color var(--trans)}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--grid-c) 1px,transparent 1px),linear-gradient(90deg,var(--grid-c) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;transition:opacity var(--trans)}
+#app{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:0 20px 80px}
+
+/* HEADER */
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 0 20px;border-bottom:1px solid var(--border);margin-bottom:22px;flex-wrap:wrap;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--violet),var(--cyan));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:17px;color:#fff;flex-shrink:0;box-shadow:0 0 18px rgba(124,109,247,.4)}
+.logo-text{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.logo-sub{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:2px;margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.hbadge{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:20px;letter-spacing:.5px;border:1px solid}
+.hb-dialect{background:var(--bg3);border-color:var(--border2);color:var(--violet-l)}
+.hb-easy{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.35);color:#4ade80}
+.hb-medium{background:rgba(245,200,66,.1);border-color:rgba(245,200,66,.35);color:#f5c842}
+.hb-hard{background:rgba(242,107,122,.1);border-color:rgba(242,107,122,.35);color:#f26b7a}
+.hb-expert{background:rgba(124,109,247,.1);border-color:rgba(124,109,247,.35);color:var(--violet-l)}
+.theme-btn{width:38px;height:38px;border-radius:9px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all .2s;color:var(--text)}
+.theme-btn:hover{border-color:var(--violet);background:var(--surface2);transform:scale(1.05)}
+
+/* EXEC ORDER BAR */
+.exec-bar{display:flex;gap:0;overflow-x:auto;padding:8px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:20px;scrollbar-width:none;box-shadow:var(--shadow)}
+.exec-bar::-webkit-scrollbar{display:none}
+.eb-step{display:flex;align-items:center;flex-shrink:0}
+.eb-node{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 10px;border-radius:8px;transition:all .25s;cursor:default}
+.eb-node.active{background:var(--surface2)}
+.eb-node.done{opacity:.4}
+.eb-n{font-family:var(--mono);font-size:9px;color:var(--text3)}
+.eb-lbl{font-family:var(--mono);font-size:11px;font-weight:700}
+.eb-arr{color:var(--text3);font-size:10px;padding:0 2px;margin-top:-5px}
+
+/* WORKSPACE */
+.workspace{display:grid;grid-template-columns:420px 1fr;gap:18px;align-items:start}
+@media(max-width:1080px){.workspace{grid-template-columns:1fr}}
+
+/* PANELS */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:background var(--trans),border-color var(--trans);box-shadow:var(--shadow)}
+.panel-hd{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--border);background:var(--bg3);transition:background var(--trans),border-color var(--trans)}
+.ph-ico{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:var(--mono);font-weight:700;flex-shrink:0}
+.phi-v{background:rgba(124,109,247,.18);color:var(--violet-l)}
+.phi-c{background:rgba(56,229,197,.12);color:var(--cyan)}
+.phi-a{background:rgba(245,200,66,.12);color:var(--amber)}
+.phi-r{background:rgba(242,107,122,.12);color:var(--rose)}
+.phi-g{background:rgba(74,222,128,.12);color:var(--green)}
+.panel-hd h2{font-size:13px;font-weight:600;flex:1;color:var(--text)}
+.panel-bd{padding:14px}
+
+/* EDITOR */
+.editor-wrap{position:relative;background:var(--input-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
+.editor-wrap:focus-within{border-color:var(--violet)}
+.lnums{position:absolute;top:0;left:0;bottom:0;width:36px;background:var(--bg3);border-right:1px solid var(--border);padding:12px 0;display:flex;flex-direction:column;align-items:center;font-family:var(--mono);font-size:11px;color:var(--text3);pointer-events:none;line-height:1.55;overflow:hidden}
+.ln{height:24px;display:flex;align-items:center;justify-content:center;width:100%}
+#sql-input{display:block;width:100%;resize:vertical;padding:12px 12px 12px 46px;font-family:var(--mono);font-size:13px;line-height:1.55;color:var(--text);background:transparent;border:none;outline:none;tab-size:2;min-height:180px;transition:color var(--trans)}
+#dataset-input{display:block;width:100%;resize:vertical;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--text);background:transparent;border:none;outline:none;min-height:110px;transition:color var(--trans)}
+textarea::placeholder{color:var(--text3)}
+
+/* SAMPLES */
+.samples-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.sbtn{font-family:var(--mono);font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 9px;border-radius:6px;cursor:pointer;transition:all .15s}
+.sbtn:hover{border-color:var(--violet);color:var(--violet-l)}
+
+/* CONTROLS */
+.ctrl-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn-run{flex:1;min-width:140px;padding:11px;background:linear-gradient(135deg,var(--violet),var(--violet-d));border:none;border-radius:var(--radius);color:#fff;font-family:var(--display);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .2s,transform .1s;box-shadow:0 4px 14px rgba(124,109,247,.4)}
+.btn-run:hover{opacity:.9;transform:translateY(-1px)}
+.btn-run:active{transform:scale(.98)}
+.btn-run.running{opacity:.65;pointer-events:none}
+.btn-sm{padding:9px 13px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-sm:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* SELECT */
+select{width:100%;padding:7px 10px;font-family:var(--mono);font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);outline:none;cursor:pointer;transition:all .2s}
+select:hover,select:focus{border-color:var(--border2);color:var(--text)}
+
+/* TABS */
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--border);background:var(--bg3);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:var(--mono);font-size:10.5px;padding:9px 13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text3);transition:all .15s;white-space:nowrap;user-select:none}
+.tab.active{color:var(--violet-l);border-bottom-color:var(--violet);background:var(--bg2)}
+.tab:hover:not(.active){color:var(--text2);background:var(--bg4)}
+.tpanel{display:none;padding:16px;animation:fadeUp .2s ease}
+.tpanel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* TABLES */
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);margin-top:8px}
+table.dt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+table.dt th{background:var(--bg4);padding:6px 11px;text-align:left;color:var(--text2);font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;border-bottom:1px solid var(--border)}
+table.dt td{padding:5px 11px;color:var(--text);border-bottom:1px solid var(--border);white-space:nowrap;transition:background .1s}
+table.dt tr:last-child td{border-bottom:none}
+table.dt tr:hover td{background:var(--card-hover)}
+table.dt td.n{color:var(--cyan)}table.dt td.s{color:var(--amber)}
+table.dt td.nl{color:var(--text3);font-style:italic}
+table.dt tr.rm td{background:rgba(242,107,122,.08);text-decoration:line-through;opacity:.6;color:var(--rose)}
+table.dt tr.mk td{background:rgba(56,229,197,.06)}
+table.dt tr.gp td{background:rgba(124,109,247,.07)}
+table.dt tr.fn td{background:rgba(74,222,128,.06)}
+
+/* STAGES */
+.stages{display:flex;flex-direction:column;gap:12px}
+.stage-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:fadeUp .3s ease both}
+.stage-hdr{display:flex;align-items:center;gap:10px;padding:11px 15px;cursor:pointer;user-select:none;transition:background .15s}
+.stage-hdr:hover{background:var(--card-hover)}
+.s-badge{min-width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:700;flex-shrink:0}
+[data-theme="dark"] .sb-from{background:#1c1f5a;color:#7c9ef7}[data-theme="dark"] .sb-join{background:#1c2d5a;color:#7cc4f7}
+[data-theme="dark"] .sb-where{background:#2d1c5a;color:#c47cf7}[data-theme="dark"] .sb-group{background:#0e2d28;color:#38e5c5}
+[data-theme="dark"] .sb-having{background:#2d2700;color:#f5c842}[data-theme="dark"] .sb-select{background:#0e2d14;color:#4ade80}
+[data-theme="dark"] .sb-order{background:#2d1c0e;color:#fb923c}[data-theme="dark"] .sb-limit{background:#2d0e14;color:#f26b7a}
+[data-theme="dark"] .sb-cte{background:#2d1c5a;color:#c4a7f7}[data-theme="dark"] .sb-win{background:#0e1e2d;color:#60a5fa}
+[data-theme="light"] .sb-from{background:#dde6ff;color:#1a3abf}[data-theme="light"] .sb-join{background:#d6e8ff;color:#1a5abf}
+[data-theme="light"] .sb-where{background:#e8d6ff;color:#6a1abf}[data-theme="light"] .sb-group{background:#d0f5ee;color:#066b52}
+[data-theme="light"] .sb-having{background:#fff3d0;color:#7a5800}[data-theme="light"] .sb-select{background:#d0f5dc;color:#0a6622}
+[data-theme="light"] .sb-order{background:#fff0d0;color:#8a4400}[data-theme="light"] .sb-limit{background:#ffd8de;color:#8a1020}
+[data-theme="light"] .sb-cte{background:#ede6ff;color:#5a14bf}[data-theme="light"] .sb-win{background:#d6eaff;color:#1a4a8a}
+.stage-name{font-size:13px;font-weight:700;flex:1;color:var(--text)}
+.stage-meta{font-size:10px;font-family:var(--mono);color:var(--text3)}
+.stage-arr{color:var(--text3);font-size:10px;transition:transform .2s}
+.stage-arr.open{transform:rotate(90deg)}
+.stage-body{padding:14px;display:none;border-top:1px solid var(--border);animation:fadeUp .2s ease}
+.stage-body.open{display:block}
+
+/* OP BADGES */
+.op-badge{display:inline-block;font-family:var(--mono);font-size:10px;padding:2px 9px;border-radius:20px;margin-bottom:8px;border:1px solid}
+[data-theme="dark"] .op-scan{background:#1c1f5a;color:#7c9ef7;border-color:#2a2e7a}
+[data-theme="dark"] .op-filter{background:#2d1c5a;color:#c47cf7;border-color:#4a2e7a}
+[data-theme="dark"] .op-agg{background:#0e2d28;color:#38e5c5;border-color:#0e4a3a}
+[data-theme="dark"] .op-sort{background:#2d2700;color:#f5c842;border-color:#4a3f00}
+[data-theme="dark"] .op-proj{background:#0e2d14;color:#4ade80;border-color:#0e4a20}
+[data-theme="dark"] .op-lim{background:#2d0e14;color:#f26b7a;border-color:#4a1422}
+[data-theme="dark"] .op-join{background:#0e1e2d;color:#60a5fa;border-color:#1a2d4a}
+[data-theme="dark"] .op-info{background:rgba(124,109,247,.12);color:var(--violet-l);border-color:rgba(124,109,247,.3)}
+[data-theme="light"] .op-scan{background:#e8edff;color:#1a3abf;border-color:#b0bfef}
+[data-theme="light"] .op-filter{background:#f0e8ff;color:#6a1abf;border-color:#c8b0ef}
+[data-theme="light"] .op-agg{background:#e0f5ef;color:#066b52;border-color:#90d5c0}
+[data-theme="light"] .op-sort{background:#fffbe8;color:#7a5800;border-color:#e0d060}
+[data-theme="light"] .op-proj{background:#e4f8ec;color:#0a6622;border-color:#90d5a8}
+[data-theme="light"] .op-lim{background:#ffe8ec;color:#8a1020;border-color:#f0a0a8}
+[data-theme="light"] .op-join{background:#e4eeff;color:#1a4a8a;border-color:#90b0e0}
+[data-theme="light"] .op-info{background:rgba(124,109,247,.08);color:var(--violet);border-color:rgba(124,109,247,.25)}
+
+/* ROW COUNTS */
+.rc-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.rc{font-family:var(--mono);font-size:10px;background:var(--bg4);border:1px solid var(--border);padding:3px 10px;border-radius:20px}
+.rc-in{color:var(--text2)}.rc-out{color:var(--cyan)}.rc-rm{color:var(--rose)}
+
+/* PERF SCORECARD */
+.perf-main{text-align:center;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+.big-score{font-size:52px;font-weight:800;background:linear-gradient(135deg,var(--violet-l),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.score-lbl{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:3px}
+.perf-dims{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pd{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:9px}
+.pd .pd-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.7px}
+.pd .pd-val{font-size:18px;font-weight:700;margin-top:2px}
+.pd .pd-bar{height:4px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden}
+.pd .pd-fill{height:100%;border-radius:2px;transition:width .8s ease}
+
+/* SANDBOX */
+.sb-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+@media(max-width:600px){.sb-grid{grid-template-columns:1fr 1fr}}
+.sb-ctrl{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:9px}
+.sb-ctrl .sc-lbl{font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
+input[type=range]{width:100%;accent-color:var(--violet)}
+.sb-v{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--violet-l);margin-top:4px}
+
+/* BOTTLENECK */
+.bt-list{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+.bt-item{display:flex;align-items:flex-start;gap:9px;padding:9px 12px;background:var(--bg4);border-radius:var(--radius);border-left:3px solid}
+.bt-low{border-color:#4ade80}.bt-med{border-color:#f5c842}
+.bt-high{border-color:#fb923c}.bt-crit{border-color:#f26b7a;background:rgba(242,107,122,.06)}
+.bt-icon{font-size:17px;flex-shrink:0;margin-top:1px}
+.bt-ttl{font-size:12px;font-weight:700;color:var(--text)}
+.bt-desc{font-size:11px;color:var(--text2);margin-top:2px}
+.bt-sev{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;margin-left:auto;align-self:center;flex-shrink:0;font-weight:700}
+.sev-low{background:rgba(74,222,128,.15);color:#4ade80}
+.sev-med{background:rgba(245,200,66,.15);color:#f5c842}
+.sev-high{background:rgba(251,146,60,.15);color:#fb923c}
+.sev-crit{background:rgba(242,107,122,.15);color:#f26b7a}
+
+/* COST TABLE */
+.cost-tbl{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px;margin-top:8px}
+.cost-tbl th{color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.8px;padding:6px 10px;border-bottom:1px solid var(--border);text-align:left}
+.cost-tbl td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.cost-tbl tr:last-child td{border-bottom:none;font-weight:700;color:var(--violet-l)}
+.c-bar{height:5px;background:var(--border);border-radius:3px;margin-top:3px;overflow:hidden}
+.c-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--violet),var(--cyan))}
+
+/* TREE */
+.tree-nd{font-family:var(--mono);font-size:12px;line-height:1.9}
+.tn-row{display:flex;align-items:center;gap:6px;padding:2px 0;cursor:pointer}
+.tn-row:hover .tn-lbl{color:var(--violet-l)}
+.tn-lbl{color:var(--text)}
+.tn-cost{font-size:10px;color:var(--text3);margin-left:5px}
+.tn-rows{font-size:10px;color:var(--cyan);margin-left:3px}
+.tree-children{padding-left:18px;border-left:1px dashed var(--border);margin-left:8px}
+
+/* INDEX */
+.idx-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.idx-box{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:11px}
+.idx-box h4{font-size:12px;font-weight:700;margin-bottom:7px}
+.idx-no h4{color:var(--rose)}.idx-yes h4{color:var(--green)}
+.idx-no{border-color:rgba(242,107,122,.3)}.idx-yes{border-color:rgba(74,222,128,.3)}
+.idx-row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)}
+.idx-row:last-child{border-bottom:none}
+.idx-row span{color:var(--text3)}.idx-row strong{color:var(--text)}
+.improvement{display:flex;align-items:center;gap:8px;margin-top:9px;padding:8px;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);border-radius:var(--radius);font-family:var(--mono);font-size:11px;color:var(--green)}
+
+/* TIMELINE */
+.timeline{display:flex;gap:0;margin-top:10px;overflow-x:auto;padding-bottom:6px;align-items:flex-end}
+.tl-col{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;flex:1}
+.tl-bar{width:calc(100% - 10px);border-radius:4px 4px 0 0;display:flex;align-items:flex-end;justify-content:center;padding-bottom:3px;font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.85);min-height:16px}
+.tl-ms{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--cyan)}
+.tl-lbl{font-family:var(--mono);font-size:9px;color:var(--text3);text-align:center}
+
+/* MEMORY BARS */
+.mem-rows{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.mem-r{display:flex;align-items:center;gap:9px}
+.mem-lbl{font-family:var(--mono);font-size:10px;color:var(--text2);width:88px;flex-shrink:0}
+.mem-bwrap{flex:1;background:var(--border);border-radius:3px;height:14px;overflow:hidden}
+.mem-fill{height:100%;border-radius:3px;display:flex;align-items:center;justify-content:flex-end;padding-right:5px}
+.mem-fill span{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,.9)}
+.mem-peak{margin-top:7px;padding:7px 11px;background:rgba(242,107,122,.08);border:1px solid rgba(242,107,122,.2);border-radius:var(--radius);font-family:var(--mono);font-size:11px;color:var(--rose)}
+
+/* FLOW GRAPH */
+.flow-graph{display:flex;flex-direction:column;gap:3px;margin-top:8px;align-items:center}
+.fg-node{padding:6px 16px;border-radius:8px;font-size:11px;font-weight:600;border:1px solid;white-space:nowrap;animation:fadeUp .3s ease both;font-family:var(--mono)}
+.fg-table{background:rgba(56,229,197,.1);border-color:rgba(56,229,197,.4);color:var(--cyan)}
+.fg-filter{background:rgba(124,109,247,.1);border-color:rgba(124,109,247,.4);color:var(--violet-l)}
+.fg-join{background:rgba(96,165,250,.1);border-color:rgba(96,165,250,.4);color:var(--blue)}
+.fg-agg{background:rgba(74,222,128,.1);border-color:rgba(74,222,128,.4);color:var(--green)}
+.fg-out{background:rgba(245,200,66,.1);border-color:rgba(245,200,66,.4);color:var(--amber)}
+.fg-arr{color:var(--text3);font-size:15px;line-height:1.2}
+
+/* DIALECT */
+.dial-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:9px;margin-top:8px}
+.dial-card{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:11px}
+.dial-card h4{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+.dial-card pre{font-family:var(--mono);font-size:11px;color:var(--text);white-space:pre-wrap;line-height:1.6}
+
+/* REWRITE */
+.rw-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:8px}
+@media(max-width:700px){.rw-grid{grid-template-columns:1fr}}
+.rw-box{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:11px}
+.rw-box h4{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+.rw-orig h4{color:var(--rose)}.rw-new h4{color:var(--green)}
+.rw-box pre{font-family:var(--mono);font-size:11.5px;color:var(--text);white-space:pre-wrap;line-height:1.6}
+.rw-why{margin-top:9px;padding:7px 11px;background:rgba(124,109,247,.08);border:1px solid rgba(124,109,247,.2);border-radius:var(--radius);font-size:12px;color:var(--text2)}
+.rw-why strong{color:var(--violet-l)}
+
+/* CTE */
+.cte-step{background:var(--bg4);border:1px solid var(--border);border-left:3px solid var(--violet);border-radius:var(--radius);padding:9px 13px;margin-top:7px}
+.cte-lbl{font-size:10px;font-family:var(--mono);color:var(--violet-l);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+
+/* ERRORS */
+.err-box{background:rgba(242,107,122,.07);border:1px solid rgba(242,107,122,.25);border-radius:var(--radius);padding:13px;margin-bottom:14px}
+.err-ttl{color:var(--rose);font-weight:700;font-size:13px;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.err-msg{font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.7}
+.err-fix{background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:var(--radius);padding:9px 13px;margin-top:9px}
+.err-fix-lbl{font-size:10px;font-family:var(--mono);color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.err-fix pre{font-family:var(--mono);font-size:11.5px;color:var(--text);white-space:pre-wrap}
+
+/* INDEX ADVISOR */
+.idx-recs{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.idx-rec{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;display:flex;align-items:flex-start;gap:9px}
+.itb{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;flex-shrink:0;margin-top:2px;border:1px solid}
+.itb-s{background:rgba(96,165,250,.15);color:var(--blue);border-color:rgba(96,165,250,.3)}
+.itb-c{background:rgba(124,109,247,.15);color:var(--violet-l);border-color:rgba(124,109,247,.3)}
+.itb-cv{background:rgba(74,222,128,.15);color:var(--green);border-color:rgba(74,222,128,.3)}
+.idx-rec-sql{font-family:var(--mono);font-size:11px;color:var(--text);margin-top:2px}
+.idx-rec-why{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* INTERVIEW */
+.iv-sec{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;margin-top:9px}
+.iv-sec h4{font-size:11px;font-family:var(--mono);color:var(--violet-l);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+.iv-sec .content{font-size:12.5px;color:var(--text2);line-height:1.75}
+.iv-sec .content code{font-family:var(--mono);font-size:11px;background:var(--bg3);border:1px solid var(--border);padding:1px 5px;border-radius:4px;color:var(--cyan)}
+
+/* TUTOR */
+.tutor-lvls{display:flex;gap:5px;margin-bottom:12px}
+.tlvl{font-family:var(--mono);font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--border);color:var(--text3);transition:all .15s}
+.tlvl.active{background:var(--violet);border-color:var(--violet);color:#fff}
+.tutor-out{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:13px;font-size:13px;color:var(--text2);line-height:1.8;min-height:80px}
+.ai-loading{color:var(--text3);font-family:var(--mono);font-size:12px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:.1}}
+
+/* HISTORY */
+.hist-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:7px 11px;display:flex;align-items:center;gap:7px;cursor:pointer;transition:all .15s}
+.hist-item:hover{border-color:var(--violet);background:var(--surface2)}
+.hist-ver{font-family:var(--mono);font-size:10px;color:var(--violet-l);background:rgba(124,109,247,.15);padding:2px 7px;border-radius:4px;flex-shrink:0}
+.hist-prev{font-family:var(--mono);font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-sc{font-family:var(--mono);font-size:10px;color:var(--cyan)}
+.hist-del{font-size:12px;color:var(--text3);cursor:pointer;padding:2px 5px;border-radius:4px;transition:all .15s}
+.hist-del:hover{color:var(--rose);background:rgba(242,107,122,.1)}
+
+/* EDGE CASES */
+.ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:7px;margin-top:6px}
+.ec-item{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:9px;display:flex;align-items:flex-start;gap:7px}
+.ec-ico{font-size:17px;flex-shrink:0}
+.ec-lbl{font-size:11px;font-weight:600;color:var(--text);display:block}
+.ec-desc{font-size:10px;color:var(--text2);margin-top:1px;font-family:var(--mono)}
+.ec-ok{border-color:rgba(74,222,128,.25)}.ec-warn{border-color:rgba(245,200,66,.3)}.ec-risk{border-color:rgba(242,107,122,.3)}
+
+/* SPILL */
+.spill-warn{background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.3);border-radius:var(--radius);padding:9px 13px;margin-top:7px;display:flex;gap:9px}
+.spill-ico{font-size:19px;flex-shrink:0}
+.spill-txt{font-size:12px;color:var(--text2);line-height:1.6}
+.spill-txt strong{color:var(--orange)}
+
+/* FINAL RESULT */
+.final-res{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-lg);overflow:hidden;margin-top:18px}
+.final-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;background:linear-gradient(90deg,rgba(124,109,247,.1),rgba(56,229,197,.05));border-bottom:1px solid var(--border2);flex-wrap:wrap;gap:7px}
+.final-ttl{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;color:var(--text)}
+.rows-badge{font-family:var(--mono);font-size:10px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:var(--green);padding:3px 10px;border-radius:20px}
+
+/* STATUS BAR */
+.status-bar{display:flex;align-items:center;gap:12px;padding:8px 15px;background:var(--bg3);border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--text3);flex-wrap:wrap}
+.sd{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sd-idle{background:var(--text3)}.sd-ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.sd-warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+.sd-err{background:var(--rose);box-shadow:0 0 6px var(--rose)}
+.sd-run{background:var(--violet);box-shadow:0 0 6px var(--violet);animation:blink2 1s infinite}
+@keyframes blink2{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* DIVIDER */
+.sdiv{display:flex;align-items:center;gap:9px;margin:14px 0 9px;font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.5px}
+.sdiv::before,.sdiv::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* MISC */
+code{font-family:var(--mono);font-size:11px;background:var(--bg4);border:1px solid var(--border);padding:1px 5px;border-radius:4px;color:var(--cyan)}
+.explain-txt{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:9px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.placeholder{text-align:center;padding:50px 20px;color:var(--text3);font-family:var(--mono);font-size:13px}
+.placeholder-ico{font-size:36px;margin-bottom:10px;opacity:.2}
+.placeholder-txt{opacity:.6}
+.blink{animation:pulse 1.2s infinite}
+
+/* REAL DB */
+.rdb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:8px}
+.rdb-card{background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
+.rdb-card h4{font-size:11px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.rdb-card .rdb-v{font-size:12px;color:var(--text);font-family:var(--mono)}
+
+/* LIGHT THEME SPECIFIC OVERRIDES */
+[data-theme="light"] .panel{box-shadow:0 2px 16px rgba(180,80,80,.07);}
+[data-theme="light"] .exec-bar{box-shadow:0 2px 12px rgba(180,80,80,.07);}
+[data-theme="light"] .stage-card{box-shadow:0 1px 8px rgba(180,80,80,.05);}
+[data-theme="light"] table.dt th{background:#ffe8e8;color:#4a2020;border-bottom:1px solid #f0d8d8;}
+[data-theme="light"] table.dt td{color:#1a0a0a;}
+[data-theme="light"] table.dt td.n{color:#b05000;}
+[data-theme="light"] table.dt td.s{color:#8a3a00;}
+[data-theme="light"] table.dt td.nl{color:#906060;font-style:italic;}
+[data-theme="light"] table.dt tr.mk td{background:rgba(180,230,200,.25);}
+[data-theme="light"] table.dt tr.gp td{background:rgba(255,180,180,.15);}
+[data-theme="light"] table.dt tr.fn td{background:rgba(180,240,200,.2);}
+[data-theme="light"] table.dt tr.rm td{background:rgba(255,200,200,.3);color:#900010;}
+[data-theme="light"] .rc{background:#ffe8e8;border-color:#f0d8d8;}
+[data-theme="light"] .rc-in{color:#4a2020;}
+[data-theme="light"] .rc-out{color:#b05000;}
+[data-theme="light"] .rc-rm{color:#900010;}
+[data-theme="light"] .explain-txt{color:#4a2020;}
+[data-theme="light"] .stage-name{color:#1a0a0a;}
+[data-theme="light"] .stage-meta{color:#906060;}
+[data-theme="light"] .sdiv{color:#906060;}
+[data-theme="light"] .sdiv::before,[data-theme="light"] .sdiv::after{background:#f0d8d8;}
+[data-theme="light"] .tab{color:#906060;}
+[data-theme="light"] .tab.active{color:#c0303a;border-bottom-color:#c0303a;background:#ffffff;}
+[data-theme="light"] .tab:hover:not(.active){color:#4a2020;background:#ffe8e8;}
+[data-theme="light"] .tabs{background:#fff0f0;}
+[data-theme="light"] .lnums{background:#fff0f0;border-right-color:#f0d8d8;color:#906060;}
+[data-theme="light"] .editor-wrap{background:#ffffff;}
+[data-theme="light"] #sql-input,[data-theme="light"] #dataset-input{color:#1a0a0a;}
+[data-theme="light"] textarea::placeholder{color:#c09090;}
+[data-theme="light"] .hb-dialect{background:#fff0f0;border-color:#e0b8b8;color:#c0303a;}
+[data-theme="light"] .sbtn{background:#fff0f0;border-color:#f0d8d8;color:#4a2020;}
+[data-theme="light"] .sbtn:hover{border-color:#c0303a;color:#c0303a;}
+[data-theme="light"] .btn-sm{background:#fff0f0;border-color:#f0d8d8;color:#4a2020;}
+[data-theme="light"] .btn-sm:hover{border-color:#38b2ac;color:#0a6060;}
+[data-theme="light"] .sb-ctrl{background:#ffe8e8;border-color:#f0d8d8;}
+[data-theme="light"] .pd{background:#ffe8e8;border-color:#f0d8d8;}
+[data-theme="light"] select{background:#fff0f0;border-color:#f0d8d8;color:#4a2020;}
+[data-theme="light"] .bt-item{background:#fff0f0;}
+[data-theme="light"] .bt-crit{background:rgba(200,20,30,.05);}
+[data-theme="light"] .cte-step{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .dial-card{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .dial-card pre{color:#1a0a0a;}
+[data-theme="light"] .rw-box{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .rw-box pre{color:#1a0a0a;}
+[data-theme="light"] .rw-why{background:rgba(200,80,80,.04);border-color:rgba(200,80,80,.15);color:#4a2020;}
+[data-theme="light"] .idx-box{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .idx-row{border-color:#f0d8d8;}
+[data-theme="light"] .idx-row span{color:#906060;}
+[data-theme="light"] .idx-row strong{color:#1a0a0a;}
+[data-theme="light"] .idx-rec{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .idx-rec-sql{color:#1a0a0a;}
+[data-theme="light"] .idx-rec-why{color:#4a2020;}
+[data-theme="light"] .iv-sec{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .iv-sec h4{color:#c0303a;}
+[data-theme="light"] .iv-sec .content{color:#4a2020;}
+[data-theme="light"] .iv-sec .content code{background:#ffe8e8;border-color:#f0d8d8;color:#b05000;}
+[data-theme="light"] .tlvl{border-color:#f0d8d8;color:#906060;}
+[data-theme="light"] .tutor-out{background:#fff0f0;border-color:#f0d8d8;color:#4a2020;}
+[data-theme="light"] .hist-item{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .hist-item:hover{border-color:#c0303a;background:#ffe8e8;}
+[data-theme="light"] .hist-prev{color:#4a2020;}
+[data-theme="light"] .hist-ver{color:#c0303a;background:rgba(200,50,60,.08);}
+[data-theme="light"] .hist-sc{color:#b05000;}
+[data-theme="light"] .ec-item{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .ec-lbl{color:#1a0a0a;}
+[data-theme="light"] .ec-desc{color:#4a2020;}
+[data-theme="light"] .spill-txt{color:#4a2020;}
+[data-theme="light"] .spill-warn{background:rgba(200,80,20,.05);border-color:rgba(200,80,20,.2);}
+[data-theme="light"] .final-res{background:#fff0f0;border-color:#e0b8b8;}
+[data-theme="light"] .final-hd{background:linear-gradient(90deg,rgba(200,50,60,.05),rgba(180,80,20,.03));}
+[data-theme="light"] .final-ttl{color:#1a0a0a;}
+[data-theme="light"] .rows-badge{background:rgba(22,160,80,.08);border-color:rgba(22,160,80,.2);color:#0a5025;}
+[data-theme="light"] .status-bar{background:#fff0f0;border-color:#f0d8d8;color:#906060;}
+[data-theme="light"] .err-box{background:rgba(200,20,30,.04);border-color:rgba(200,20,30,.2);}
+[data-theme="light"] .err-ttl{color:#900010;}
+[data-theme="light"] .err-msg{color:#4a2020;}
+[data-theme="light"] .err-fix{background:rgba(22,140,60,.05);border-color:rgba(22,140,60,.18);}
+[data-theme="light"] .err-fix pre{color:#1a0a0a;}
+[data-theme="light"] .err-fix-lbl{color:#0a5025;}
+[data-theme="light"] .cost-tbl th{color:#906060;border-color:#f0d8d8;}
+[data-theme="light"] .cost-tbl td{color:#1a0a0a;border-color:#f0d8d8;}
+[data-theme="light"] .cost-tbl tr:last-child td{color:#c0303a;}
+[data-theme="light"] .c-bar{background:#f0d8d8;}
+[data-theme="light"] .tree-nd .tn-lbl{color:#1a0a0a;}
+[data-theme="light"] .tree-nd .tn-cost{color:#906060;}
+[data-theme="light"] .tree-nd .tn-rows{color:#b05000;}
+[data-theme="light"] .tree-children{border-color:#f0d8d8;}
+[data-theme="light"] .mem-bwrap{background:#f0d8d8;}
+[data-theme="light"] .mem-peak{background:rgba(200,20,30,.04);border-color:rgba(200,20,30,.2);color:#900010;}
+[data-theme="light"] .mem-lbl{color:#4a2020;}
+[data-theme="light"] .tl-lbl{color:#906060;}
+[data-theme="light"] .tl-ms{color:#b05000;}
+[data-theme="light"] code{background:#ffe8e8;border-color:#f0d8d8;color:#b05000;}
+[data-theme="light"] .sb-v{color:#c0303a;}
+[data-theme="light"] .sc-lbl{color:#906060;}
+[data-theme="light"] .improvement{background:rgba(22,140,60,.06);border-color:rgba(22,140,60,.2);color:#0a5025;}
+[data-theme="light"] .rdb-card{background:#fff0f0;border-color:#f0d8d8;}
+[data-theme="light"] .rdb-card h4{color:#906060;}
+[data-theme="light"] .rdb-card .rdb-v{color:#1a0a0a;}
+[data-theme="light"] .eb-node.active{background:#ffe8e8;}
+[data-theme="light"] .eb-n{color:#906060;}
+[data-theme="light"] .eb-arr{color:#c09090;}
+[data-theme="light"] .fg-table{background:rgba(22,160,133,.07);border-color:rgba(22,160,133,.3);color:#0a6060;}
+[data-theme="light"] .fg-filter{background:rgba(200,60,60,.06);border-color:rgba(200,60,60,.25);color:#c0303a;}
+[data-theme="light"] .fg-join{background:rgba(30,80,200,.05);border-color:rgba(30,80,200,.25);color:#1a4a9a;}
+[data-theme="light"] .fg-agg{background:rgba(22,160,80,.07);border-color:rgba(22,160,80,.25);color:#0a5025;}
+[data-theme="light"] .fg-out{background:rgba(180,100,0,.07);border-color:rgba(180,100,0,.25);color:#7a4000;}
+[data-theme="light"] .fg-arr{color:#c09090;}
+[data-theme="light"] .big-score{background:linear-gradient(135deg,#c0303a,#b05000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+[data-theme="light"] .score-lbl{color:#906060;}
+[data-theme="light"] .placeholder-ico{opacity:.2;}
+[data-theme="light"] .placeholder-txt{color:#906060;opacity:.8;}
+
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">
+    <div class="logo-icon">▶</div>
+    <div>
+      <div class="logo-text">QueryForge Pro</div>
+      <div class="logo-sub">Enterprise SQL Engine v2</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="hbadge hb-dialect" id="dialect-badge">⬡ Auto-detect</span>
+    <span class="hbadge hb-easy" id="complexity-badge" style="display:none">● Easy</span>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  </div>
+</header>
+
+<div class="exec-bar" id="exec-bar"></div>
+
+<div class="workspace">
+  <!-- LEFT COLUMN -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <div class="panel">
+      <div class="panel-hd"><div class="ph-ico phi-v">SQL</div><h2>SQL Query</h2></div>
+      <div class="panel-bd">
+        <div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:7px">Quick Examples</div>
+        <div class="samples-row">
+          <button class="sbtn" onclick="loadSample('basic')">Basic SELECT</button>
+          <button class="sbtn" onclick="loadSample('group')">GROUP+HAVING</button>
+          <button class="sbtn" onclick="loadSample('join')">Multi JOIN</button>
+          <button class="sbtn" onclick="loadSample('subq')">Subquery</button>
+          <button class="sbtn" onclick="loadSample('window')">Window Fns</button>
+          <button class="sbtn" onclick="loadSample('cte')">CTE</button>
+          <button class="sbtn" onclick="loadSample('recursive')">Recursive CTE</button>
+          <button class="sbtn" onclick="loadSample('error')">Error Query</button>
+        </div>
+        <div class="editor-wrap">
+          <div class="lnums" id="lnums"></div>
+          <textarea id="sql-input" spellcheck="false"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><div class="ph-ico phi-c">⊞</div><h2>Dataset</h2></div>
+      <div class="panel-bd">
+        <div class="editor-wrap">
+          <textarea id="dataset-input" spellcheck="false" placeholder="-- table: employees&#10;-- id,name,salary,dept_id"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><div class="ph-ico phi-a">⚙</div><h2>Interactive Sandbox</h2></div>
+      <div class="panel-bd">
+        <div class="sb-grid">
+          <div class="sb-ctrl">
+            <div class="sc-lbl">Data Volume</div>
+            <input type="range" id="sb-vol" min="100" max="10000000" step="100" value="1000" oninput="sbUpdate()"/>
+            <div class="sb-v" id="sb-vol-v">1,000 rows</div>
+          </div>
+          <div class="sb-ctrl">
+            <div class="sc-lbl">Index Type</div>
+            <select id="sb-idx" onchange="sbUpdate()">
+              <option value="none">No Index</option>
+              <option value="single">Single Column</option>
+              <option value="composite">Composite</option>
+              <option value="covering">Covering Index</option>
+            </select>
+            <div class="sb-v" id="sb-idx-v" style="font-size:10px;color:var(--text3);margin-top:4px">Full Table Scan</div>
+          </div>
+          <div class="sb-ctrl">
+            <div class="sc-lbl">Join Algorithm</div>
+            <select id="sb-join" onchange="sbUpdate()">
+              <option value="auto">Auto Select</option>
+              <option value="nested">Nested Loop</option>
+              <option value="hash">Hash Join</option>
+              <option value="merge">Merge Join</option>
+            </select>
+            <div class="sb-v" id="sb-join-v" style="font-size:10px;color:var(--text3);margin-top:4px">Engine decides</div>
+          </div>
+        </div>
+        <div id="sb-result" style="margin-top:9px"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="score-panel" style="display:none">
+      <div class="panel-hd"><div class="ph-ico phi-g">★</div><h2>Performance Scorecard</h2></div>
+      <div class="panel-bd">
+        <div class="perf-main">
+          <div class="big-score" id="big-score">—</div>
+          <div class="score-lbl">Query Score / 100</div>
+        </div>
+        <div class="perf-dims" id="perf-dims"></div>
+      </div>
+    </div>
+
+    <div class="ctrl-row">
+      <button class="btn-run" id="run-btn" onclick="runSim()">
+        <span id="run-txt">▶ Execute Query</span>
+        <svg id="run-spin" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" values="0 12 12;360 12 12" dur="1s" repeatCount="indefinite"/></path>
+        </svg>
+      </button>
+      <button class="btn-sm" onclick="clearAll()">✕ Clear</button>
+      <button class="btn-sm" onclick="exportReport()">↓ Export</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><div class="ph-ico phi-r">⏱</div><h2>Query History</h2></div>
+      <div class="panel-bd">
+        <div class="hist-list" id="hist-list"><div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:14px">No history yet</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel" style="min-height:600px">
+    <div class="panel-hd" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="ph-ico phi-r">▸</div>
+        <h2>Execution Results</h2>
+      </div>
+      <div class="sd sd-idle" id="hdr-sd"></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="exec" onclick="switchTab('exec')">⚙ Plan</div>
+      <div class="tab" data-tab="rewrite" onclick="switchTab('rewrite')">⟳ Rewrite</div>
+      <div class="tab" data-tab="cost" onclick="switchTab('cost')">$ Cost</div>
+      <div class="tab" data-tab="tree" onclick="switchTab('tree')">🌲 Tree</div>
+      <div class="tab" data-tab="index" onclick="switchTab('index')">⚡ Index</div>
+      <div class="tab" data-tab="join" onclick="switchTab('join')">⊕ Joins</div>
+      <div class="tab" data-tab="subq" onclick="switchTab('subq')">◎ Subquery</div>
+      <div class="tab" data-tab="window" onclick="switchTab('window')">∞ Window</div>
+      <div class="tab" data-tab="cte" onclick="switchTab('cte')">⊂ CTE</div>
+      <div class="tab" data-tab="memory" onclick="switchTab('memory')">⊘ Memory</div>
+      <div class="tab" data-tab="timeline" onclick="switchTab('timeline')">▦ Timeline</div>
+      <div class="tab" data-tab="flow" onclick="switchTab('flow')">↗ Flow</div>
+      <div class="tab" data-tab="dialect" onclick="switchTab('dialect')">⟺ Dialect</div>
+      <div class="tab" data-tab="bottleneck" onclick="switchTab('bottleneck')">⚠ Perf</div>
+      <div class="tab" data-tab="edge" onclick="switchTab('edge')">◈ Edge</div>
+      <div class="tab" data-tab="interview" onclick="switchTab('interview')">📋 Interview</div>
+      <div class="tab" data-tab="tutor" onclick="switchTab('tutor')">🎓 AI Tutor</div>
+    </div>
+
+    <div id="tab-exec" class="tpanel active"><div id="exec-out"><div class="placeholder"><div class="placeholder-ico">⬡</div><div class="placeholder-txt">Enter SQL + dataset → Execute<br><span class="blink">_</span></div></div></div></div>
+    <div id="tab-rewrite" class="tpanel"><div id="rewrite-out"><div class="placeholder"><div class="placeholder-ico">⟳</div><div class="placeholder-txt">Query rewrite engine<span class="blink">_</span></div></div></div></div>
+    <div id="tab-cost" class="tpanel"><div id="cost-out"><div class="placeholder"><div class="placeholder-ico">$</div><div class="placeholder-txt">Cost-based optimizer<span class="blink">_</span></div></div></div></div>
+    <div id="tab-tree" class="tpanel"><div id="tree-out"><div class="placeholder"><div class="placeholder-ico">🌲</div><div class="placeholder-txt">EXPLAIN plan tree<span class="blink">_</span></div></div></div></div>
+    <div id="tab-index" class="tpanel"><div id="index-out"><div class="placeholder"><div class="placeholder-ico">⚡</div><div class="placeholder-txt">Index impact + advisor<span class="blink">_</span></div></div></div></div>
+    <div id="tab-join" class="tpanel"><div id="join-out"><div class="placeholder"><div class="placeholder-ico">⊕</div><div class="placeholder-txt">Join visualization<span class="blink">_</span></div></div></div></div>
+    <div id="tab-subq" class="tpanel"><div id="subq-out"><div class="placeholder"><div class="placeholder-ico">◎</div><div class="placeholder-txt">Subquery execution<span class="blink">_</span></div></div></div></div>
+    <div id="tab-window" class="tpanel"><div id="window-out"><div class="placeholder"><div class="placeholder-ico">∞</div><div class="placeholder-txt">Window function engine<span class="blink">_</span></div></div></div></div>
+    <div id="tab-cte" class="tpanel"><div id="cte-out"><div class="placeholder"><div class="placeholder-ico">⊂</div><div class="placeholder-txt">CTE execution engine<span class="blink">_</span></div></div></div></div>
+    <div id="tab-memory" class="tpanel"><div id="memory-out"><div class="placeholder"><div class="placeholder-ico">⊘</div><div class="placeholder-txt">Memory + disk spill<span class="blink">_</span></div></div></div></div>
+    <div id="tab-timeline" class="tpanel"><div id="timeline-out"><div class="placeholder"><div class="placeholder-ico">▦</div><div class="placeholder-txt">Execution timeline<span class="blink">_</span></div></div></div></div>
+    <div id="tab-flow" class="tpanel"><div id="flow-out"><div class="placeholder"><div class="placeholder-ico">↗</div><div class="placeholder-txt">Data flow graph<span class="blink">_</span></div></div></div></div>
+    <div id="tab-dialect" class="tpanel"><div id="dialect-out"><div class="placeholder"><div class="placeholder-ico">⟺</div><div class="placeholder-txt">Dialect converter<span class="blink">_</span></div></div></div></div>
+    <div id="tab-bottleneck" class="tpanel"><div id="bottleneck-out"><div class="placeholder"><div class="placeholder-ico">⚠</div><div class="placeholder-txt">Bottleneck detector<span class="blink">_</span></div></div></div></div>
+    <div id="tab-edge" class="tpanel"><div id="edge-out"><div class="placeholder"><div class="placeholder-ico">◈</div><div class="placeholder-txt">Edge case analyzer<span class="blink">_</span></div></div></div></div>
+    <div id="tab-interview" class="tpanel"><div id="interview-out"><div class="placeholder"><div class="placeholder-ico">📋</div><div class="placeholder-txt">Run a query first<span class="blink">_</span></div></div></div></div>
+    <div id="tab-tutor" class="tpanel">
+      <div class="tutor-lvls">
+        <div class="tlvl active" onclick="setTutorLvl('beginner',this)">Beginner</div>
+        <div class="tlvl" onclick="setTutorLvl('intermediate',this)">Intermediate</div>
+        <div class="tlvl" onclick="setTutorLvl('expert',this)">Expert</div>
+      </div>
+      <div class="tutor-out" id="tutor-out"><span style="color:var(--text3);font-family:var(--mono);font-size:11px">Run a query first to activate AI Tutor.</span></div>
+    </div>
+
+    <div class="status-bar">
+      <span class="sd sd-idle" id="sb-sd"></span>
+      <span id="sb-txt">Ready — enter query and dataset, then Execute</span>
+      <span id="sb-time" style="margin-left:auto"></span>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+// ═══ THEME ═══
+let theme = localStorage.getItem('qf2-theme')||'dark';
+document.documentElement.setAttribute('data-theme',theme);
+document.getElementById('theme-btn').textContent = theme==='dark'?'☀️':'🌙';
+function toggleTheme(){
+  theme = theme==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('theme-btn').textContent = theme==='dark'?'☀️':'🌙';
+  localStorage.setItem('qf2-theme',theme);
+}
+
+// ═══ EXEC ORDER BAR ═══
+const STEPS=[
+  {k:'from',l:'FROM',c:'#7c9ef7'},{k:'join',l:'JOIN',c:'#60a5fa'},
+  {k:'where',l:'WHERE',c:'#c47cf7'},{k:'group',l:'GROUP BY',c:'#38e5c5'},
+  {k:'having',l:'HAVING',c:'#f5c842'},{k:'select',l:'SELECT',c:'#4ade80'},
+  {k:'distinct',l:'DISTINCT',c:'#86efac'},{k:'order',l:'ORDER BY',c:'#fb923c'},
+  {k:'limit',l:'LIMIT',c:'#f26b7a'}
+];
+function buildBar(active=[]){
+  document.getElementById('exec-bar').innerHTML=STEPS.map((s,i)=>`
+    <div class="eb-step">
+      <div class="eb-node ${active.includes(s.k)?'active':active.length?'done':''}">
+        <span class="eb-n">${i+1}</span>
+        <span class="eb-lbl" style="color:${s.c}">${s.l}</span>
+      </div>
+      ${i<STEPS.length-1?'<span class="eb-arr">→</span>':''}
+    </div>`).join('');
+}
+buildBar();
+
+// ═══ SAMPLES ═══
+const SAMPLES={
+  basic:{sql:`SELECT id, name, salary\nFROM employees\nWHERE salary > 60000\nORDER BY salary DESC\nLIMIT 5;`,
+    data:`table: employees\nid,name,salary,dept_id,age\n1,Alice,85000,1,32\n2,Bob,72000,2,28\n3,Carol,91000,1,40\n4,Dave,55000,3,25\n5,Eve,63000,2,35\n6,Frank,47000,3,29\n7,Grace,110000,1,45\n8,Henry,58000,2,31`},
+  group:{sql:`SELECT dept_id,\n       COUNT(*) AS emp_count,\n       AVG(salary) AS avg_salary,\n       MAX(salary) AS max_salary\nFROM employees\nGROUP BY dept_id\nHAVING COUNT(*) >= 2\nORDER BY avg_salary DESC;`,
+    data:`table: employees\nid,name,salary,dept_id\n1,Alice,85000,1\n2,Bob,72000,2\n3,Carol,91000,1\n4,Dave,55000,3\n5,Eve,63000,2\n6,Frank,47000,3\n7,Grace,110000,1\n8,Henry,58000,2`},
+  join:{sql:`SELECT e.name, e.salary, d.department_name, m.name AS manager\nFROM employees e\nJOIN departments d ON e.dept_id = d.id\nLEFT JOIN employees m ON d.manager_id = m.id\nWHERE e.salary > 65000\nORDER BY e.salary DESC;`,
+    data:`table: employees\nid,name,salary,dept_id\n1,Alice,85000,1\n2,Bob,72000,2\n3,Carol,91000,1\n4,Dave,55000,3\n5,Grace,110000,1\n6,Heidi,68000,2\n\ntable: departments\nid,department_name,manager_id\n1,Engineering,3\n2,Marketing,6\n3,Operations,4`},
+  subq:{sql:`SELECT name, salary\nFROM employees\nWHERE salary > (\n  SELECT AVG(salary) FROM employees\n)\nAND dept_id IN (\n  SELECT id FROM departments WHERE department_name != 'Operations'\n)\nORDER BY salary DESC;`,
+    data:`table: employees\nid,name,salary,dept_id\n1,Alice,85000,1\n2,Bob,72000,2\n3,Carol,91000,1\n4,Dave,55000,3\n5,Eve,63000,2\n6,Grace,110000,1\n\ntable: departments\nid,department_name\n1,Engineering\n2,Marketing\n3,Operations`},
+  window:{sql:`SELECT name, dept_id, salary,\n       ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rn,\n       RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rnk,\n       DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS dense_rnk,\n       LAG(salary) OVER (PARTITION BY dept_id ORDER BY salary DESC) AS prev_salary\nFROM employees\nORDER BY dept_id, salary DESC;`,
+    data:`table: employees\nid,name,salary,dept_id\n1,Alice,85000,1\n2,Bob,72000,2\n3,Carol,91000,1\n4,Dave,55000,3\n5,Eve,63000,2\n6,Grace,110000,1\n7,Henry,72000,2\n8,Ian,55000,3`},
+  cte:{sql:`WITH dept_stats AS (\n  SELECT dept_id,\n         AVG(salary) AS avg_sal,\n         COUNT(*) AS emp_cnt\n  FROM employees\n  GROUP BY dept_id\n),\ntop_earners AS (\n  SELECT e.*, d.avg_sal, d.emp_cnt\n  FROM employees e\n  JOIN dept_stats d ON e.dept_id = d.dept_id\n  WHERE e.salary > d.avg_sal\n)\nSELECT name, salary, dept_id, avg_sal\nFROM top_earners\nORDER BY salary DESC;`,
+    data:`table: employees\nid,name,salary,dept_id\n1,Alice,85000,1\n2,Bob,72000,2\n3,Carol,91000,1\n4,Dave,55000,3\n5,Eve,63000,2\n6,Grace,110000,1\n7,Henry,80000,2\n8,Ian,48000,3`},
+  recursive:{sql:`WITH RECURSIVE org_chart AS (\n  SELECT id, name, manager_id, 0 AS level\n  FROM employees\n  WHERE manager_id IS NULL\n  UNION ALL\n  SELECT e.id, e.name, e.manager_id, oc.level + 1\n  FROM employees e\n  JOIN org_chart oc ON e.manager_id = oc.id\n)\nSELECT id, name, level\nFROM org_chart\nORDER BY level, id;`,
+    data:`table: employees\nid,name,manager_id\n1,CEO,\n2,VP_Eng,1\n3,VP_Mkt,1\n4,Eng_Lead,2\n5,Dev_A,4\n6,Dev_B,4\n7,Mkt_Lead,3`},
+  error:{sql:`SELECT name, salery, dept_name\nFROM employes\nWHERE salery > 60000\nGROUP BY nam\nHAVING COUNT > 1\nORDR BY salary;`,
+    data:`table: employees\nid,name,salary,dept_id\n1,Alice,85000,1`}
+};
+function loadSample(k){const s=SAMPLES[k];if(!s)return;document.getElementById('sql-input').value=s.sql;document.getElementById('dataset-input').value=s.data;updateLnums()}
+loadSample('group');
+
+// ═══ LINE NUMBERS ═══
+function updateLnums(){
+  const ta=document.getElementById('sql-input');
+  const n=ta.value.split('\n').length;
+  document.getElementById('lnums').innerHTML=Array.from({length:n},(_,i)=>`<span class="ln">${i+1}</span>`).join('');
+}
+document.getElementById('sql-input').addEventListener('input',updateLnums);
+updateLnums();
+
+// ═══ TAB SWITCH ═══
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.tpanel').forEach(p=>p.classList.toggle('active',p.id===`tab-${name}`));
+}
+
+// ═══ PARSER ═══
+function parseSQL(raw){
+  const sql=raw.trim().replace(/;\s*$/,'');
+  const c={select:null,from:null,join:[],where:null,groupBy:null,having:null,orderBy:null,limit:null,offset:null,distinct:false,cte:[],isRecursive:false,subqueries:[],windowFns:[],raw:sql};
+  c.distinct=/SELECT\s+DISTINCT/i.test(sql);c.isRecursive=/WITH\s+RECURSIVE/i.test(sql);
+  const cteM=sql.match(/WITH\s+(?:RECURSIVE\s+)?([\s\S]+?)(?=SELECT\s)/i);
+  if(cteM){const re=/(\w+)\s+AS\s*\(([\s\S]+?)\)(?:\s*,|\s*$)/gi;let m;while((m=re.exec(cteM[1]))!==null)c.cte.push({name:m[1],body:m[2].trim()})}
+  const selM=sql.match(/SELECT\s+(?:DISTINCT\s+)?([\s\S]+?)(?=\s+FROM\s+|\s*$)/i);
+  if(selM)c.select=selM[1].trim();
+  const fromM=sql.match(/FROM\s+(`?[\w.]+`?)(?:\s+AS\s+(\w+)|\s+(\w+)(?=\s))?/i);
+  if(fromM&&!fromM[1].toLowerCase().match(/^(select|with)$/))c.from={table:fromM[1].replace(/`/g,''),alias:fromM[2]||fromM[3]||null};
+  const jRE=/((?:INNER|LEFT\s+OUTER?|LEFT|RIGHT\s+OUTER?|RIGHT|FULL\s+OUTER?|FULL|CROSS|SEMI|ANTI)?)\s*JOIN\s+(`?[\w.]+`?)(?:\s+(?:AS\s+)?(\w+))?\s+ON\s+([\s\S]+?)(?=\s+(?:WHERE|GROUP|HAVING|ORDER|LIMIT|UNION|\w+\s+JOIN|$))/gi;
+  let jm;while((jm=jRE.exec(sql))!==null)c.join.push({type:(jm[1]||'INNER').trim()||'INNER',table:jm[2].replace(/`/g,''),alias:jm[3]||null,on:jm[4].trim()});
+  const wM=sql.match(/WHERE\s+([\s\S]+?)(?=\s+GROUP\s+BY|\s+HAVING|\s+ORDER\s+BY|\s+LIMIT|\s*$)/i);if(wM)c.where=wM[1].trim();
+  const gbM=sql.match(/GROUP\s+BY\s+([\s\S]+?)(?=\s+HAVING|\s+ORDER\s+BY|\s+LIMIT|\s*$)/i);if(gbM)c.groupBy=gbM[1].trim();
+  const hvM=sql.match(/HAVING\s+([\s\S]+?)(?=\s+ORDER\s+BY|\s+LIMIT|\s*$)/i);if(hvM)c.having=hvM[1].trim();
+  const obM=sql.match(/ORDER\s+BY\s+([\s\S]+?)(?=\s+LIMIT|\s*$)/i);if(obM)c.orderBy=obM[1].trim();
+  const lM=sql.match(/LIMIT\s+(\d+)/i);if(lM)c.limit=parseInt(lM[1]);
+  const offM=sql.match(/OFFSET\s+(\d+)/i);if(offM)c.offset=parseInt(offM[1]);
+  const winRE=/(ROW_NUMBER|RANK|DENSE_RANK|NTILE|LAG|LEAD|FIRST_VALUE|LAST_VALUE|SUM|COUNT|AVG)\s*\([^)]*\)\s+OVER\s*\([^)]*\)/gi;
+  let wn;while((wn=winRE.exec(sql))!==null)c.windowFns.push(wn[0]);
+  const sqRE=/\(\s*(SELECT\s+[\s\S]+?)\)/gi;let sq;while((sq=sqRE.exec(sql))!==null)c.subqueries.push(sq[1].trim());
+  return c;
+}
+function parseDS(raw){
+  const tables={};if(!raw.trim())return tables;
+  const secs=raw.split(/(?=table:\s*\w)/i);
+  for(const sec of secs){const t=sec.trim();if(!t)continue;
+    const m=t.match(/^(?:table:\s*(\w+)\s*\n)?([\s\S]+)/i);if(!m)continue;
+    const name=(m[1]||'table1').toLowerCase();
+    const lines=m[2].trim().split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('--'));
+    if(!lines.length)continue;
+    const headers=lines[0].split(',').map(h=>h.trim());
+    const rows=[];
+    for(let i=1;i<lines.length;i++){const vals=lines[i].split(',').map(v=>v.trim());const row={};headers.forEach((h,j)=>{const v=vals[j]||'';row[h]=v===''||v.toLowerCase()==='null'?null:(isNaN(v)?v:Number(v))});rows.push(row)}
+    tables[name]={headers,rows};
+  }
+  return tables;
+}
+function parseCols(s){if(!s)return['*'];const cols=[];let depth=0,cur='';for(const ch of s){if(ch==='('){depth++;cur+=ch}else if(ch===')'){depth--;cur+=ch}else if(ch===','&&depth===0){cols.push(cur.trim());cur=''}else cur+=ch}if(cur.trim())cols.push(cur.trim());return cols}
+function evalCond(row,cond,tables={}){if(!cond)return true;try{let expr=cond;const sqM=expr.match(/\(\s*SELECT\s+([\s\S]+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+([\s\S]+?))?\s*\)/i);if(sqM){const fn=sqM[1].trim().toUpperCase(),tbl=tables[sqM[2].toLowerCase()];let v=0;if(tbl){if(fn.startsWith('AVG(')){const c=fn.match(/AVG\((\w+)\)/)?.[1];if(c)v=tbl.rows.reduce((s,r)=>s+(+r[c]||0),0)/tbl.rows.length}else if(fn.startsWith('MAX(')){const c=fn.match(/MAX\((\w+)\)/)?.[1];if(c)v=Math.max(...tbl.rows.map(r=>+r[c]||0))}else if(fn.startsWith('COUNT('))v=tbl.rows.length;else if(fn.startsWith('SUM(')){const c=fn.match(/SUM\((\w+)\)/)?.[1];if(c)v=tbl.rows.reduce((s,r)=>s+(+r[c]||0),0)}};expr=expr.replace(sqM[0],v)}
+const inM=expr.match(/(\w+)\s+IN\s+\(\s*SELECT\s+([\s\S]+?)\s+FROM\s+(\w+)(?:\s+WHERE\s+([\s\S]+?))?\s*\)/i);if(inM){const col=inM[1],tbl=tables[inM[3].toLowerCase()];const vals=tbl?tbl.rows.map(r=>r[inM[2].trim()]):[];expr=expr.replace(inM[0],vals.includes(row[col])?'true':'false')}
+Object.entries(row).forEach(([k,v])=>{const re=new RegExp(`(?:\\w+\\.)?\\b${k}\\b`,'gi');expr=expr.replace(re,v===null?'null':typeof v==='string'?`"${v.replace(/"/g,'\\"')}"`:v)});
+expr=expr.replace(/(\S+)\s+IS\s+NOT\s+NULL/gi,(_,c)=>c==='null'?'false':'true');expr=expr.replace(/(\S+)\s+IS\s+NULL/gi,(_,c)=>c==='null'?'true':'false');
+expr=expr.replace(/(\S+)\s+BETWEEN\s+(\S+)\s+AND\s+(\S+)/gi,'($1>=$2&&$1<=$3)');expr=expr.replace(/\bAND\b/gi,'&&').replace(/\bOR\b/gi,'||').replace(/\bNOT\b/gi,'!');
+return Boolean(Function('"use strict";return('+expr+')')())}catch(e){return true}}
+function evalAgg(fn,col,rows){fn=fn.toUpperCase();if(fn==='COUNT')return col==='*'?rows.length:rows.filter(r=>r[col]!==null).length;const nums=rows.map(r=>+(r[col])||0);if(fn==='SUM')return nums.reduce((a,b)=>a+b,0);if(fn==='AVG')return nums.length?Math.round((nums.reduce((a,b)=>a+b,0)/nums.length)*100)/100:0;if(fn==='MAX')return nums.length?Math.max(...nums):null;if(fn==='MIN')return nums.length?Math.min(...nums):null;return 0}
+function renderTbl(rows,cols,hlFn=null,max=30){if(!rows||!rows.length)return`<div style="color:var(--text3);font-family:var(--mono);font-size:11px;padding:8px">— Empty result set —</div>`;const shown=rows.slice(0,max),more=rows.length-max;const headers=cols||Object.keys(rows[0]);return`<div class="tbl-wrap"><table class="dt"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${shown.map((row,ri)=>{const cls=hlFn?hlFn(row,ri):'';return`<tr class="${cls}">${headers.map(h=>{const v=row[h];const cc=v===null?'nl':typeof v==='number'?'n':'s';return`<td class="${cc}">${v===null?'NULL':v}</td>`}).join('')}</tr>`}).join('')}</tbody></table>${more>0?`<div style="text-align:center;padding:5px;font-family:var(--mono);font-size:10px;color:var(--text3)">… ${more} more rows</div>`:''}</div>`}
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>Array.from({length:b.length+1},(_,j)=>i||j));for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=a[i-1]===b[j-1]?d[i-1][j-1]:1+Math.min(d[i-1][j],d[i][j-1],d[i-1][j-1]);return d[a.length][b.length]}
+function detectDialect(sql){const u=sql.toUpperCase();if(/ROWNUM|CONNECT BY|NVL\(/.test(u))return'Oracle';if(/TOP\s+\d|GETDATE\(\)|DATEPART/.test(u))return'SQL Server';if(/ISNULL\(|CHARINDEX/.test(u))return'SQL Server';if(/IFNULL\(|STR_TO_DATE/.test(u))return'MySQL 8';if(/GENERATE_SERIES|EXTRACT\(/.test(u))return'PostgreSQL 16';if(/STRFTIME|PRAGMA/.test(u))return'SQLite 3';if(/\bOVER\s*\(/.test(u))return'PostgreSQL 16';return'ANSI SQL'}
+function detectErrors(sql,tables){const errors=[];if(/SELET\s|SELCT\s|SLECT\s/i.test(sql))errors.push({type:'syntax',loc:'SELECT',msg:'Typo in SELECT keyword',fix:'Use SELECT'});if(/\bFROM\s+employes\b/i.test(sql))errors.push({type:'table',loc:'FROM',msg:'Table "employes" not found — did you mean "employees"?',fix:'FROM employees'});if(/\bORDR\s+BY\b/i.test(sql))errors.push({type:'syntax',loc:'ORDER BY',msg:'Typo: ORDR BY',fix:'Use ORDER BY'});const colM=sql.match(/WHERE\s+(\w+)\s*>/i);if(colM){const col=colM[1];for(const[,tbl]of Object.entries(tables)){if(tbl.headers.length&&!tbl.headers.map(h=>h.toLowerCase()).includes(col.toLowerCase())){const close=tbl.headers.find(h=>lev(h.toLowerCase(),col.toLowerCase())<=2);if(close)errors.push({type:'column',loc:'WHERE',msg:`Column "${col}" not found — did you mean "${close}"?`,fix:`Replace "${col}" with "${close}"`})}}}if(/HAVING\s+COUNT\s*>/i.test(sql))errors.push({type:'syntax',loc:'HAVING',msg:'HAVING COUNT > ... — missing parentheses',fix:'HAVING COUNT(*) > value'});return errors}
+function calcComplexity(c){let s=0;if(c.join.length)s+=c.join.length*10;if(c.subqueries.length)s+=c.subqueries.length*15;if(c.cte.length)s+=c.cte.length*12;if(c.isRecursive)s+=25;if(c.windowFns.length)s+=c.windowFns.length*12;if(c.groupBy)s+=8;if(c.having)s+=5;if(c.orderBy)s+=3;if(c.distinct)s+=5;if(s<=15)return{label:'Easy',cls:'hb-easy'};if(s<=35)return{label:'Medium',cls:'hb-medium'};if(s<=65)return{label:'Hard',cls:'hb-hard'};return{label:'Expert',cls:'hb-expert'}}
+function calcPerf(c,errors){let perf=100,read=100,maint=100,scale=100;if(c.select==='*'){perf-=10;read-=5}if(!c.where&&c.from){perf-=20;scale-=15}if(c.subqueries.length>1){perf-=15;scale-=10}if(c.isRecursive)maint-=10;if(c.cte.length>3)maint-=8;if(errors.length>0){perf-=errors.length*10;read-=errors.length*10}if(c.join.length>3)scale-=10;perf=Math.max(0,perf);read=Math.max(0,read);maint=Math.max(0,maint);scale=Math.max(0,scale);return{total:Math.round((perf+read+maint+scale)/4),perf,read,maint,scale}}
+
+// ═══ HISTORY ═══
+let history=[],hVer=1;
+function addHistory(sql,score){history.unshift({ver:hVer++,sql,score,ts:new Date().toLocaleTimeString()});if(history.length>10)history.pop();renderHistory()}
+function renderHistory(){const el=document.getElementById('hist-list');if(!history.length){el.innerHTML=`<div style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center;padding:12px">No history yet</div>`;return}el.innerHTML=history.map((h,i)=>`<div class="hist-item" onclick="restoreH(${i})"><span class="hist-ver">v${h.ver}</span><span class="hist-prev">${h.sql.replace(/\s+/g,' ').substring(0,48)}...</span><span class="hist-sc">${h.score}/100</span><span class="hist-del" onclick="event.stopPropagation();delH(${i})">✕</span></div>`).join('')}
+function restoreH(i){document.getElementById('sql-input').value=history[i].sql;updateLnums()}
+function delH(i){history.splice(i,1);renderHistory()}
+
+// ═══ SANDBOX ═══
+function sbUpdate(){
+  const vol=parseInt(document.getElementById('sb-vol').value);
+  const idx=document.getElementById('sb-idx').value;
+  const join=document.getElementById('sb-join').value;
+  document.getElementById('sb-vol-v').textContent=vol.toLocaleString()+' rows';
+  const il={none:'Full Table Scan',single:'Index Seek',composite:'Composite Seek',covering:'Index-Only Scan'};
+  const jl={auto:'Engine decides',nested:'O(n×m)',hash:'O(n+m)',merge:'O(n log n)'};
+  document.getElementById('sb-idx-v').textContent=il[idx];
+  document.getElementById('sb-join-v').textContent=jl[join];
+  const base=vol/1000;const im={none:1,single:.15,composite:.08,covering:.03};const jm={auto:.5,nested:1,hash:.3,merge:.4};
+  const est=Math.round(base*(im[idx]||1)*(jm[join]||.5));const t=(est*0.01).toFixed(2);const mem=Math.round(vol*0.0008*(im[idx]||1));const spill=mem>512;
+  document.getElementById('sb-result').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-family:var(--mono);font-size:11px"><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Est. Cost</div><div style="font-size:16px;font-weight:700;color:${est>500?'var(--rose)':est>100?'var(--amber)':'var(--green)'};">${est}</div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Est. Time</div><div style="font-size:16px;font-weight:700;color:var(--cyan)">${t}ms</div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:8px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Memory</div><div style="font-size:16px;font-weight:700;color:${spill?'var(--rose)':'var(--violet-l)'}">${mem>1024?(mem/1024).toFixed(1)+'GB':mem+'MB'}</div></div></div>${spill?`<div class="spill-warn" style="margin-top:7px"><div class="spill-ico">⚠️</div><div class="spill-txt"><strong>Disk Spill!</strong> Est. memory (${(mem/1024).toFixed(1)}GB) exceeds work_mem. Add covering index to prevent 10-100× slowdown.</div></div>`:''}`;
+}
+sbUpdate();
+function setStatus(type,msg){const cls={idle:'sd-idle',ok:'sd-ok',warn:'sd-warn',err:'sd-err',run:'sd-run'}[type]||'sd-idle';document.getElementById('hdr-sd').className='sd '+cls;document.getElementById('sb-sd').className='sd '+cls;document.getElementById('sb-txt').textContent=msg}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+function clearAll(){document.getElementById('sql-input').value='';document.getElementById('dataset-input').value='';updateLnums();document.getElementById('exec-out').innerHTML=`<div class="placeholder"><div class="placeholder-ico">⬡</div><div class="placeholder-txt">Enter SQL + dataset → Execute<br><span class="blink">_</span></div></div>`;document.getElementById('score-panel').style.display='none';document.getElementById('complexity-badge').style.display='none';setStatus('idle','Ready');buildBar()}
+
+// ═══ MAIN SIMULATION ═══
+async function runSim(){
+  const sqlRaw=document.getElementById('sql-input').value.trim();
+  const dataRaw=document.getElementById('dataset-input').value.trim();
+  if(!sqlRaw){alert('Enter a SQL query first');return}
+  const btn=document.getElementById('run-btn');btn.classList.add('running');document.getElementById('run-txt').textContent='Executing...';document.getElementById('run-spin').style.display='inline-block';
+  setStatus('run','Parsing and simulating...');await sleep(80);
+  const c=parseSQL(sqlRaw);const tables=parseDS(dataRaw);const dialect=detectDialect(sqlRaw);const errors=detectErrors(sqlRaw,tables);const cplx=calcComplexity(c);
+  document.getElementById('dialect-badge').textContent=`⬡ ${dialect}`;
+  const cb=document.getElementById('complexity-badge');cb.textContent=`● ${cplx.label}`;cb.className=`hbadge ${cplx.cls}`;cb.style.display='inline-block';
+  const stages=[];let ws=[],wc=[];
+  const fromTbl=c.from?tables[c.from.table.toLowerCase()]:null;
+  if(fromTbl){ws=fromTbl.rows.map(r=>({...r}));wc=[...fromTbl.headers]}
+  else if(c.from){ws=[{id:1,name:'Alice',salary:85000,dept_id:1},{id:2,name:'Bob',salary:72000,dept_id:2},{id:3,name:'Carol',salary:91000,dept_id:1}];wc=['id','name','salary','dept_id']}
+  if(c.from)stages.push({key:'from',label:`FROM ${c.from.table}`,op:'Table Scan',opc:'op-scan',explain:`Loading base table <code>${c.from.table}</code>. Sequential scan reads all ${ws.length} rows into buffer pool.`,rowsIn:0,rowsOut:ws.length,tableHtml:renderTbl(ws,wc)});
+  for(const jc of c.join){
+    const jTbl=tables[jc.table.toLowerCase()];if(!jTbl)continue;
+    const before=ws.length;const onM=jc.on.match(/(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)/i);let joined=[];
+    if(onM){let lc=onM[2],rc=onM[4];if(!wc.includes(lc)){[lc,rc]=[rc,lc]}if(!wc.includes(lc)){lc=onM[2];rc=onM[4]}const jType=(jc.type||'INNER').toUpperCase();for(const lr of ws){const matches=jTbl.rows.filter(r=>r[rc]===lr[lc]);if(matches.length)matches.forEach(rr=>{const m={...lr};jTbl.headers.forEach(h=>{if(!(h in m))m[h]=rr[h]});joined.push(m)});else if(jType.includes('LEFT')){const m={...lr};jTbl.headers.forEach(h=>{if(!(h in m))m[h]=null});joined.push(m)}}if(!joined.length)joined=ws}else joined=ws;
+    const nc=[...new Set([...wc,...jTbl.headers])];ws=joined;wc=nc;
+    stages.push({key:'join',label:`${jc.type||'INNER'} JOIN ${jc.table}`,op:'Hash Join',opc:'op-join',explain:`Hash Join with <code>${jc.table}</code> on <code>${jc.on}</code>. Build hash table on inner relation, probe for each outer row.`,rowsIn:before,rowsOut:ws.length,tableHtml:renderTbl(ws,wc,(_,i)=>i<3?'mk':'')});
+  }
+  if(c.where){const before=ws.length;const kept=[],removed=[];for(const r of ws)(evalCond(r,c.where,tables)?kept:removed).push(r);stages.push({key:'where',label:'WHERE',op:'Filter',opc:'op-filter',explain:`Filter: <code>${c.where}</code>. ${removed.length} rows eliminated, ${kept.length} pass.`,rowsIn:before,rowsOut:kept.length,rowsRemoved:removed.length,tableHtml:renderTbl([...kept,...removed],wc,(r,i)=>i<kept.length?'mk':'rm')});ws=kept}
+  let grouped=null;
+  if(c.groupBy){const before=ws.length;const gbCols=c.groupBy.split(',').map(x=>x.trim().replace(/^\w+\./,''));const groups={};for(const r of ws){const key=gbCols.map(x=>r[x]).join('||');if(!groups[key])groups[key]={keyRow:{},rows:[]};gbCols.forEach(x=>groups[key].keyRow[x]=r[x]);groups[key].rows.push(r)}grouped=groups;stages.push({key:'group',label:'GROUP BY',op:'Hash Aggregate',opc:'op-agg',explain:`Grouping ${before} rows by <code>${c.groupBy}</code>. ${Object.keys(groups).length} distinct group(s).`,rowsIn:before,rowsOut:Object.keys(groups).length,tableHtml:renderTbl(Object.values(groups).map(g=>({...g.keyRow,_grp_size:g.rows.length})),[...gbCols,'_grp_size'],()=>'gp')})}
+  if(c.having&&grouped){const before=Object.keys(grouped).length;const passed={},failed={};for(const[k,g]of Object.entries(grouped)){let expr=c.having.replace(/(COUNT|SUM|AVG|MAX|MIN)\s*\(\s*(\*|\w+)\s*\)/gi,(m,fn,col)=>String(evalAgg(fn,col,g.rows)));let pass=false;try{pass=Boolean(Function('"use strict";return('+expr+')')())}catch(e){pass=true}(pass?passed:failed)[k]=g}const gbCols=c.groupBy.split(',').map(x=>x.trim());grouped=passed;stages.push({key:'having',label:'HAVING',op:'Aggregate Filter',opc:'op-filter',explain:`Filter groups: <code>${c.having}</code>. ${Object.keys(failed).length} eliminated, ${Object.keys(passed).length} pass.`,rowsIn:before,rowsOut:Object.keys(passed).length,tableHtml:renderTbl([...Object.values(passed).map(g=>({...g.keyRow,status:'✓ kept'})),...Object.values(failed).map(g=>({...g.keyRow,status:'✗ removed'}))],[...gbCols,'status'],r=>r.status?.startsWith('✗')?'rm':'mk')})}
+  const selCols=parseCols(c.select);let finalRows=[];
+  if(grouped&&Object.keys(grouped).length>0){for(const[,g]of Object.entries(grouped)){const out={};for(const ce of selCols){const aM=ce.match(/\s+AS\s+(\w+)$/i);const alias=aM?aM[1]:null;const expr=(aM?ce.replace(/\s+AS\s+\w+$/i,'').trim():ce.trim());const aggM=expr.match(/(COUNT|SUM|AVG|MAX|MIN)\s*\(\s*(\*|\w+)\s*\)/i);if(aggM)out[alias||aggM[0]]=evalAgg(aggM[1],aggM[2],g.rows);else{const x=expr.replace(/^\w+\./,'');out[alias||x]=g.keyRow[x]!==undefined?g.keyRow[x]:g.rows[0]?.[x]}};finalRows.push(out)}}
+  else if(ws.length>0){const hasAgg=selCols.some(x=>/^(COUNT|SUM|AVG|MAX|MIN)\s*\(/i.test(x.trim()));if(hasAgg){const out={};for(const ce of selCols){const aM=ce.match(/\s+AS\s+(\w+)$/i);const alias=aM?aM[1]:null;const expr=(aM?ce.replace(/\s+AS\s+\w+$/i,'').trim():ce.trim());const aggM=expr.match(/(COUNT|SUM|AVG|MAX|MIN)\s*\(\s*(\*|\w+)\s*\)/i);if(aggM)out[alias||aggM[0]]=evalAgg(aggM[1],aggM[2],ws);else{const x=expr.replace(/^\w+\./,'');out[alias||x]=ws[0]?.[x]}};finalRows=[out]}
+  else finalRows=ws.map(row=>{const out={};for(const ce of selCols){const aM=ce.match(/\s+AS\s+(\w+)$/i);const alias=aM?aM[1]:null;const expr=(aM?ce.replace(/\s+AS\s+\w+$/i,'').trim():ce.trim()).replace(/^\w+\./,'');if(expr==='*')Object.assign(out,row);else out[alias||expr]=row[expr]};return out})}
+  const finalCols=finalRows.length?Object.keys(finalRows[0]):[];
+  stages.push({key:'select',label:'SELECT',op:'Projection',opc:'op-proj',explain:`Project columns: <code>${c.select}</code>. Resolve aliases, evaluate aggregates.`,rowsIn:grouped?Object.keys(grouped).length:ws.length,rowsOut:finalRows.length,tableHtml:renderTbl(finalRows,finalCols,()=>'fn')});
+  if(c.distinct){const before=finalRows.length;const seen=new Set();finalRows=finalRows.filter(r=>{const k=JSON.stringify(r);if(seen.has(k))return false;seen.add(k);return true});stages.push({key:'distinct',label:'DISTINCT',op:'Deduplication',opc:'op-proj',explain:`Remove duplicates. ${before-finalRows.length} duplicate(s) removed.`,rowsIn:before,rowsOut:finalRows.length,tableHtml:renderTbl(finalRows,finalCols)})}
+  if(c.orderBy){const parts=c.orderBy.split(',').map(p=>p.trim());finalRows.sort((a,b)=>{for(const pt of parts){const segs=pt.trim().split(/\s+/);const col=segs[0].replace(/^\w+\./,'');const dir=(segs[1]||'ASC').toUpperCase();const av=a[col],bv=b[col];let cmp=typeof av==='number'&&typeof bv==='number'?av-bv:String(av||'').localeCompare(String(bv||''));if(cmp!==0)return dir==='DESC'?-cmp:cmp}return 0});stages.push({key:'order',label:`ORDER BY ${c.orderBy}`,op:'Sort',opc:'op-sort',explain:`Sort by <code>${c.orderBy}</code>. Quicksort in-memory, mergesort for large sets.`,rowsIn:finalRows.length,rowsOut:finalRows.length,tableHtml:renderTbl(finalRows,finalCols)})}
+  if(c.limit!==null){const before=finalRows.length;finalRows=finalRows.slice(c.offset||0,(c.offset||0)+c.limit);stages.push({key:'limit',label:`LIMIT ${c.limit}${c.offset?` OFFSET ${c.offset}`:''}`,op:'Row Limit',opc:'op-lim',explain:`Restrict to <code>${c.limit}</code> row(s). ${before-finalRows.length} rows discarded.`,rowsIn:before,rowsOut:finalRows.length,tableHtml:renderTbl(finalRows,finalCols)})}
+  if(c.windowFns.length){const wr=simWindowFns(sqlRaw,tables,c);if(wr.rows.length){finalRows=wr.rows;stages.push({key:'window',label:'Window Functions',op:'Window Aggregate',opc:'op-agg',explain:`Window functions applied: partitions formed, row-by-row calculations.`,rowsIn:ws.length,rowsOut:wr.rows.length,tableHtml:renderTbl(wr.rows,wr.cols)})}}
+  const perf=calcPerf(c,errors);
+  renderExecTab(stages,finalRows,finalCols,errors);renderRewriteTab(c,sqlRaw);renderCostTab(stages);renderTreeTab(c,stages);renderIndexTab(c,tables);renderJoinTab(c);renderSubqTab(c,sqlRaw,tables);renderWindowTab(c,tables);renderCTETab(c);renderMemoryTab(stages);renderTimelineTab(stages);renderFlowTab(c);renderDialectTab(sqlRaw);renderBottleneckTab(c,tables,errors);renderEdgeTab(c,tables);renderInterviewTab(c,sqlRaw,dialect);renderTutorTab(c,sqlRaw);renderPerfCard(perf);
+  buildBar(stages.map(s=>s.key));addHistory(sqlRaw,perf.total);
+  btn.classList.remove('running');document.getElementById('run-txt').textContent='▶ Execute Query';document.getElementById('run-spin').style.display='none';
+  document.getElementById('sb-time').textContent=`✓ ${new Date().toLocaleTimeString()}`;setStatus('ok',`${finalRows.length} row(s) returned — Score: ${perf.total}/100`);
+}
+function simWindowFns(sql,tables,c){const tbl=c.from?tables[c.from.table.toLowerCase()]:null;if(!tbl)return{rows:[],cols:[]};let rows=tbl.rows.map(r=>({...r}));if(c.where)rows=rows.filter(r=>evalCond(r,c.where,tables));const winRe=/(ROW_NUMBER|RANK|DENSE_RANK|LAG|LEAD)\s*\([^)]*\)\s+OVER\s*\(\s*(?:PARTITION\s+BY\s+([\w,\s]+?))?\s*(?:ORDER\s+BY\s+([\w\s,]+?))?\s*\)/gi;const fns=[];let m;parseCols(c.select).forEach(ce=>{let wm;while((wm=winRe.exec(ce))!==null)fns.push({fn:wm[1].toUpperCase(),partBy:wm[2]?wm[2].split(',').map(x=>x.trim()):[],orderBy:wm[3]?wm[3].trim():null});winRe.lastIndex=0});if(!fns.length)return{rows:[],cols:[]};const fn=fns[0];const parts={};rows.forEach(r=>{const key=fn.partBy.map(x=>r[x]).join('||')||'__all';if(!parts[key])parts[key]=[];parts[key].push(r)});Object.values(parts).forEach(pRows=>{if(fn.orderBy){const ob=fn.orderBy.split(/\s+/);pRows.sort((a,b)=>typeof a[ob[0]]==='number'?a[ob[0]]-b[ob[0]]:String(a[ob[0]]||'').localeCompare(String(b[ob[0]]||'')))}pRows.forEach((r,i)=>{r['rn']=i+1;r['rnk']=i+1;r['dense_rnk']=i+1;r['prev_salary']=i>0?pRows[i-1][fn.orderBy?.split(/\s+/)[0]]||null:null})});const extra=['rn','rnk','dense_rnk','prev_salary'];return{rows,cols:[...tbl.headers,...extra.filter(x=>rows[0]&&x in rows[0])]}}
+function toggleStage(hdr){const body=hdr.nextElementSibling;const arr=hdr.querySelector('.stage-arr');const open=body.classList.toggle('open');arr.classList.toggle('open',open)}
+function exportReport(){const sql=document.getElementById('sql-input').value;if(!sql){alert('Run a query first');return}const sc=document.getElementById('big-score').textContent;const txt=`QueryForge Pro v2 — Execution Report\n${'='.repeat(50)}\nGenerated: ${new Date().toLocaleString()}\n\n${'-'.repeat(50)}\nSQL QUERY\n${'-'.repeat(50)}\n${sql}\n\n${'-'.repeat(50)}\nPERFORMANCE SCORE: ${sc}/100\n${'-'.repeat(50)}\n\nReport by QueryForge Pro v2`;const b=new Blob([txt],{type:'text/plain'});const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(b),download:'queryforge-report.txt'});a.click();URL.revokeObjectURL(a.href)}
+
+// ═══ TAB RENDERERS ═══
+function renderExecTab(stages,finalRows,finalCols,errors){
+  let html='';
+  if(errors.length){html+=`<div class="err-box"><div class="err-ttl">⚠ ${errors.length} Error(s) Detected</div>${errors.map(e=>`<div class="err-msg" style="margin-bottom:6px">• <strong>[${e.type.toUpperCase()} @ ${e.loc}]</strong> ${e.msg}</div><div class="err-fix"><div class="err-fix-lbl">Auto Fix</div><pre>${e.fix}</pre></div>`).join('')}</div>`}
+  html+=`<div class="stages">${stages.map((s,i)=>`<div class="stage-card" style="animation-delay:${i*.04}s"><div class="stage-hdr" onclick="toggleStage(this)"><div class="s-badge sb-${s.key}">${i+1}</div><div class="stage-name">${s.label}</div><div class="stage-meta">${s.rowsOut} row${s.rowsOut!==1?'s':''}</div><span class="stage-arr open">▶</span></div><div class="stage-body open"><span class="op-badge ${s.opc}">${s.op}</span><div class="explain-txt">${s.explain}</div>${s.tableHtml||''}<div class="rc-row">${s.rowsIn!==undefined?`<span class="rc rc-in">▶ In: ${s.rowsIn}</span>`:''} ${s.rowsOut!==undefined?`<span class="rc rc-out">◀ Out: ${s.rowsOut}</span>`:''} ${s.rowsRemoved!==undefined?`<span class="rc rc-rm">✗ Removed: ${s.rowsRemoved}</span>`:''}</div></div></div>`).join('')}</div>`;
+  html+=`<div class="sdiv">Final Result</div><div class="final-res"><div class="final-hd"><div class="final-ttl">⊞ Result Set</div><span class="rows-badge">${finalRows.length} row(s)</span></div><div style="padding:14px">${renderTbl(finalRows,finalCols,()=>'fn')}</div></div>`;
+  document.getElementById('exec-out').innerHTML=html;
+}
+function renderRewriteTab(c,sql){
+  const rws=[];
+  if(/\bIN\s*\(\s*SELECT/i.test(sql))rws.push({orig:sql.trim(),rewrite:sql.replace(/WHERE\s+(\w+)\s+IN\s*\(\s*SELECT\s+([\w.]+)\s+FROM\s+(\w+)\s*\)/gi,(m,col,rc,tbl)=>`SEMI JOIN ${tbl} ON ${c.from?.table||'t'}.${col} = ${tbl}.${rc}`).trim(),reason:'Subquery with IN rewritten as SEMI JOIN — stops scanning after first match for each outer row.',impact:'Up to 60% reduction in inner-loop iterations'});
+  if(c.select==='*')rws.push({orig:`SELECT *\nFROM ${c.from?.table||'table'}`,rewrite:`SELECT id, name, salary\nFROM ${c.from?.table||'table'}`,reason:'SELECT * fetches all columns. Projecting specific columns reduces I/O and enables index-only scans.',impact:'Reduces row width, enables index-only scans'});
+  if(!rws.length)rws.push({orig:sql.trim(),rewrite:'-- Query is already in optimal form.\n-- No rewrites needed.\n'+sql.trim(),reason:'The optimizer found no beneficial transformations.',impact:'No change expected'});
+  document.getElementById('rewrite-out').innerHTML=rws.map(r=>`<div class="sdiv" style="margin-top:0">Query Rewrite Engine</div><div class="rw-grid"><div class="rw-box rw-orig"><h4>⬡ Original Query</h4><pre>${r.orig}</pre></div><div class="rw-box rw-new"><h4>✓ Optimizer Rewrite</h4><pre>${r.rewrite}</pre></div></div><div class="rw-why"><strong>Reason:</strong> ${r.reason}<br><strong>Impact:</strong> ${r.impact}</div>`).join('<div style="height:14px"></div>');
+}
+function renderCostTab(stages){
+  const total=stages.reduce((s,st)=>s+(st.rowsOut||0)*.08,0);
+  const rows=stages.map(st=>{const base=Math.max(st.rowsIn||0,st.rowsOut||0,1);const cost=Math.round(base*(st.key==='order'?.1:st.key==='join'?.12:st.key==='group'?.08:st.key==='window'?.15:.05)*10)/10;const pct=Math.min(100,Math.round((cost/Math.max(total,.1))*100));return{op:st.label,cost,pct}});
+  document.getElementById('cost-out').innerHTML=`<div class="sdiv" style="margin-top:0">Cost-Based Optimizer</div><table class="cost-tbl"><thead><tr><th>Operation</th><th>Est Cost</th><th>% Total</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="font-weight:600;color:var(--text)">${r.op}</td><td style="color:var(--violet-l)">${r.cost}</td><td><div class="c-bar"><div class="c-fill" style="width:${r.pct}%"></div></div><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${r.pct}%</span></td></tr>`).join('')}<tr><td colspan="1" style="color:var(--violet-l);font-weight:700">TOTAL</td><td colspan="2" style="color:var(--violet-l);font-weight:700;font-size:14px">${Math.round(total*10)/10}</td></tr></tbody></table><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;font-family:var(--mono);font-size:11px"><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">work_mem</div><div style="font-size:16px;font-weight:700;color:var(--violet-l)">${Math.round(total*.8)}KB</div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Buffer Hits</div><div style="font-size:16px;font-weight:700;color:var(--green)">${Math.round(total*1.2)}</div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">I/O Reads</div><div style="font-size:16px;font-weight:700;color:var(--rose)">${Math.round(total*.4)}</div></div></div>`;
+}
+function renderTreeTab(c,stages){
+  function node(lbl,color,cost,rows,children=[]){return`<div class="tree-nd"><div class="tn-row"><span class="tn-lbl" style="color:${color}">${lbl}</span><span class="tn-cost">cost=${cost}</span><span class="tn-rows">(rows=${rows})</span></div>${children.length?`<div class="tree-children">${children.join('')}</div>`:''}</div>`}
+  const last=stages[stages.length-1]||{rowsOut:0};let inner=node(`Seq Scan on ${c.from?.table||'table'}`,'#7c9ef7',Math.round(last.rowsOut*.05)||1,last.rowsOut);
+  if(c.join.length)inner=node('Hash Join','#38e5c5',22,last.rowsOut,[inner,...c.join.map(j=>node(`Seq Scan on ${j.table}`,'#60a5fa',8,10))]);
+  if(c.where)inner=node(`Filter: ${c.where.substring(0,35)}`,'#c47cf7',5,last.rowsOut,[inner]);
+  if(c.groupBy)inner=node('HashAggregate','#38e5c5',12,last.rowsOut,[inner]);
+  if(c.orderBy)inner=node(`Sort by ${c.orderBy.substring(0,25)}`,'#fb923c',8,last.rowsOut,[inner]);
+  if(c.limit!==null)inner=node(`Limit ${c.limit}`,'#f26b7a',1,c.limit,[inner]);
+  document.getElementById('tree-out').innerHTML=`<div class="sdiv" style="margin-top:0">PostgreSQL-Style EXPLAIN Plan</div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:14px;overflow-x:auto">${inner}</div><div class="sdiv">Text Plan</div><div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8;background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px">QUERY PLAN\n─────────────────────────────────────────────\n${stages.map(s=>`${s.key==='from'?'Seq Scan':s.key==='join'?'Hash Join':s.key==='where'?'Filter':s.key==='group'?'HashAggregate':s.key==='order'?'Sort':s.key==='limit'?'Limit':s.label} (cost=0..${(Math.random()*50+5).toFixed(2)} rows=${s.rowsOut} width=32)`).join('\n → ')}\n─────────────────────────────────────────────\nPlanning time: ${(Math.random()*2+.5).toFixed(2)} ms\nExecution time: ${(Math.random()*15+1).toFixed(2)} ms</div>`;
+}
+function renderIndexTab(c,tables){
+  const tbl=c.from?tables[c.from.table.toLowerCase()]:null;const rc=tbl?tbl.rows.length:1000;
+  const noC=rc,noT=rc*.05,withC=Math.ceil(Math.log2(rc+1)),withT=withC*.05;const pct=Math.round((1-withC/noC)*100);
+  const recs=[];if(c.where){const cols=[...c.where.matchAll(/\b([a-zA-Z_]\w*)\s*[=><!]/g)].map(m=>m[1]).filter(w=>!['AND','OR','NOT'].includes(w.toUpperCase()));cols.forEach(col=>recs.push({cls:'itb-s',type:'Single',sql:`CREATE INDEX idx_${c.from?.table||'t'}_${col} ON ${c.from?.table||'table'}(${col});`,why:`Column <code>${col}</code> in WHERE — eliminates full table scan`}));if(cols.length>1)recs.push({cls:'itb-c',type:'Composite',sql:`CREATE INDEX idx_comp ON ${c.from?.table||'table'}(${cols.join(', ')});`,why:'Multi-column condition — composite serves all predicates in one lookup'})}
+  if(c.orderBy){const ob=c.orderBy.split(',')[0].trim().split(/\s+/)[0];recs.push({cls:'itb-cv',type:'Covering',sql:`CREATE INDEX idx_cover ON ${c.from?.table||'table'}(${ob}) INCLUDE (...);`,why:'Covering index enables index-only scan — zero heap reads'})}
+  if(!recs.length)recs.push({cls:'itb-s',type:'No Action',sql:'-- No additional indexes needed for this query',why:'Query has no WHERE predicate or is already optimal'});
+  document.getElementById('index-out').innerHTML=`<div class="sdiv" style="margin-top:0">Index Impact Comparison</div><div class="idx-grid"><div class="idx-box idx-no"><h4>✗ Without Index</h4><div class="idx-row"><span>Scan Type</span><strong>Full Table Scan</strong></div><div class="idx-row"><span>Rows Scanned</span><strong style="color:var(--rose)">${rc}</strong></div><div class="idx-row"><span>Est. Cost</span><strong style="color:var(--rose)">${noC}</strong></div><div class="idx-row"><span>Est. Time</span><strong style="color:var(--rose)">${noT.toFixed(1)}ms</strong></div></div><div class="idx-box idx-yes"><h4>✓ With B-tree Index</h4><div class="idx-row"><span>Scan Type</span><strong>Index Seek</strong></div><div class="idx-row"><span>Rows Scanned</span><strong style="color:var(--green)">${withC}</strong></div><div class="idx-row"><span>Est. Cost</span><strong style="color:var(--green)">${withC}</strong></div><div class="idx-row"><span>Est. Time</span><strong style="color:var(--green)">${withT.toFixed(3)}ms</strong></div></div></div><div class="improvement">✓ ${pct}% improvement — ${Math.round(noT/Math.max(withT,.001))}× faster with index</div><div class="sdiv">Index Advisor</div><div class="idx-recs">${recs.map(r=>`<div class="idx-rec"><span class="itb ${r.cls}">${r.type}</span><div><div class="idx-rec-sql">${r.sql}</div><div class="idx-rec-why">${r.why}</div></div></div>`).join('')}</div>`;
+}
+function renderJoinTab(c){if(!c.join.length){document.getElementById('join-out').innerHTML=`<div class="placeholder"><div class="placeholder-ico">⊕</div><div class="placeholder-txt">No JOINs in this query</div></div>`;return}const jInfo={'INNER':{algo:'Hash Join',why:'Hash join for unknown cardinality — most efficient for medium to large datasets.',complex:'O(n+m)'},'LEFT':{algo:'Hash Join (Left)',why:'LEFT JOIN preserves all left rows. Hash join emits NULLs for non-matching rows.',complex:'O(n+m)'},'CROSS':{algo:'Nested Loop',why:'Cartesian product — Nested Loop is the only option.',complex:'O(n×m)'}};document.getElementById('join-out').innerHTML=c.join.map(j=>{const jt=(j.type||'INNER').toUpperCase().replace(/\s+OUTER/,'');const d=jInfo[jt]||jInfo['INNER'];return`<div class="sdiv" style="margin-top:0">${jt} JOIN — ${j.table}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:12px"><div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Algorithm</div><div style="font-size:16px;font-weight:700;color:var(--cyan)">${d.algo}</div><div style="font-size:11px;color:var(--text2);margin-top:4px">Complexity: <code>${d.complex}</code></div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:12px"><div style="font-size:10px;font-family:var(--mono);color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Join Condition</div><div style="font-family:var(--mono);font-size:12px;color:var(--violet-l)">${j.on}</div><div style="font-size:11px;color:var(--text2);margin-top:8px">${d.why}</div></div></div>`}).join('<div style="height:14px"></div>');
+}
+function renderSubqTab(c,sql,tables){if(!c.subqueries.length){document.getElementById('subq-out').innerHTML=`<div class="placeholder"><div class="placeholder-ico">◎</div><div class="placeholder-txt">No subqueries detected</div></div>`;return}document.getElementById('subq-out').innerHTML=`<div class="sdiv" style="margin-top:0">Subquery Execution</div>${c.subqueries.map((sq,i)=>`<div class="cte-step" style="margin-top:${i?'10px':'0'}"><div class="cte-lbl">Subquery ${i+1}</div><pre style="font-family:var(--mono);font-size:11px;color:var(--text2);white-space:pre-wrap;line-height:1.6">${sq}</pre><div style="font-size:11px;color:var(--text2);margin-top:8px">Executed once per outer row (correlated) or once and cached (uncorrelated). Consider rewriting as JOIN for O(n) performance.</div></div>`).join('')}`}
+function renderWindowTab(c,tables){if(!c.windowFns.length){document.getElementById('window-out').innerHTML=`<div class="placeholder"><div class="placeholder-ico">∞</div><div class="placeholder-txt">No window functions detected</div></div>`;return}document.getElementById('window-out').innerHTML=`<div class="sdiv" style="margin-top:0">Window Function Engine</div>${c.windowFns.map((wf,i)=>`<div class="cte-step" style="margin-top:${i?'10px':'0'}"><div class="cte-lbl">Window Function ${i+1}</div><div style="font-family:var(--mono);font-size:12px;color:var(--text);margin-bottom:8px">${wf}</div><div style="font-size:11px;color:var(--text2)">Partition is formed → rows sorted within partition → function applied row-by-row. No rows are removed; each row gets an additional computed value.</div></div>`).join('')}`}
+function renderCTETab(c){if(!c.cte.length){document.getElementById('cte-out').innerHTML=`<div class="placeholder"><div class="placeholder-ico">⊂</div><div class="placeholder-txt">No CTEs in this query</div></div>`;return}document.getElementById('cte-out').innerHTML=`<div class="sdiv" style="margin-top:0">CTE Execution Engine${c.isRecursive?' (Recursive)':''}</div>${c.cte.map((ct,i)=>`<div class="cte-step" style="margin-top:${i?'10px':'0'}"><div class="cte-lbl">CTE ${i+1}: ${ct.name}</div><pre style="font-family:var(--mono);font-size:11px;color:var(--text);white-space:pre-wrap;line-height:1.6">${ct.body}</pre>${c.isRecursive&&i===0?`<div style="font-size:11px;color:var(--amber);margin-top:8px;padding:7px;background:rgba(245,200,66,.08);border:1px solid rgba(245,200,66,.2);border-radius:var(--radius)">⚠ Recursive CTE: ensure termination condition prevents infinite loop</div>`:''}</div>`).join('')}`}
+function renderMemoryTab(stages){const mData=stages.map(s=>{const base=Math.max(s.rowsIn||0,s.rowsOut||0,1);const mb=Math.round(base*(s.key==='join'?2:s.key==='group'?1.5:s.key==='order'?1.2:s.key==='window'?2.5:.1)*100)/100;return{label:s.label,mb,spill:mb>50}});const peak=Math.max(...mData.map(m=>m.mb));document.getElementById('memory-out').innerHTML=`<div class="sdiv" style="margin-top:0">Memory Usage Per Stage</div><div class="mem-rows">${mData.map(m=>`<div class="mem-r"><div class="mem-lbl">${m.label.substring(0,14)}</div><div class="mem-bwrap"><div class="mem-fill" style="width:${Math.round((m.mb/Math.max(peak,1))*100)}%;background:${m.spill?'linear-gradient(90deg,var(--amber),var(--rose))':'linear-gradient(90deg,var(--violet),var(--cyan))'}"><span>${m.mb}MB</span></div></div></div>`).join('')}</div><div class="mem-peak">📊 Peak memory: <strong>${peak}MB</strong> — ${peak>512?'⚠ Exceeds work_mem — disk spill likely!':'Within work_mem limits'}</div>${mData.some(m=>m.spill)?`<div class="spill-warn" style="margin-top:10px"><div class="spill-ico">⚠️</div><div class="spill-txt"><strong>Disk Spill Detected!</strong> Hash join or sort operation exceeds in-memory budget. Fix: increase work_mem or add covering index.</div></div>`:''}`;
+}
+function renderTimelineTab(stages){if(!stages.length)return;const base={from:8,join:25,where:5,group:18,having:8,select:4,order:20,limit:1,window:30,cte:15};const times=stages.map(s=>({label:s.label.substring(0,10),ms:Math.round((base[s.key]||10)*(1+Math.random()*.4-.2)*10)/10}));const max=Math.max(...times.map(t=>t.ms));const colors=['#7c9ef7','#60a5fa','#c47cf7','#38e5c5','#f5c842','#4ade80','#86efac','#fb923c','#f26b7a'];document.getElementById('timeline-out').innerHTML=`<div class="sdiv" style="margin-top:0">Execution Timeline</div><div class="timeline">${times.map((t,i)=>`<div class="tl-col"><div class="tl-ms">${t.ms}ms</div><div class="tl-bar" style="height:${Math.round((t.ms/max)*120)+20}px;background:${colors[i%colors.length]}">${t.ms>8?t.ms+'ms':''}</div><div class="tl-lbl">${t.label}</div></div>`).join('')}</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;font-family:var(--mono);font-size:11px"><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Parse</div><div style="font-size:16px;font-weight:700;color:var(--cyan)">${(Math.random()*.5+.1).toFixed(2)}ms</div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Plan</div><div style="font-size:16px;font-weight:700;color:var(--violet-l)">${(Math.random()*2+.5).toFixed(2)}ms</div></div><div style="background:var(--bg4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center"><div style="color:var(--text3);font-size:9px;text-transform:uppercase">Execute</div><div style="font-size:16px;font-weight:700;color:var(--green)">${times.reduce((s,t)=>s+t.ms,0).toFixed(1)}ms</div></div></div>`;
+}
+function renderFlowTab(c){const nodes=[];if(c.from)nodes.push({type:'fg-table',label:`📦 ${c.from.table}`});c.join.forEach(j=>nodes.push({type:'fg-join',label:`⊕ JOIN ${j.table}`}));if(c.where)nodes.push({type:'fg-filter',label:`⊘ WHERE`});if(c.groupBy)nodes.push({type:'fg-agg',label:`⊕ GROUP BY`});if(c.having)nodes.push({type:'fg-filter',label:`⊘ HAVING`});nodes.push({type:'fg-agg',label:`⊡ SELECT`});if(c.orderBy)nodes.push({type:'fg-filter',label:`↕ ORDER BY`});if(c.limit!==null)nodes.push({type:'fg-filter',label:`⊘ LIMIT`});nodes.push({type:'fg-out',label:`✓ Result Set`});document.getElementById('flow-out').innerHTML=`<div class="sdiv" style="margin-top:0">Data Flow Graph</div><div class="flow-graph">${nodes.map((n,i)=>`<div class="fg-node ${n.type}" style="animation-delay:${i*.05}s">${n.label}</div>${i<nodes.length-1?'<div class="fg-arr">↓</div>':''}`).join('')}</div>`}
+function renderDialectTab(sql){const dialects={'MySQL 8':convertD(sql,'mysql'),'PostgreSQL 16':convertD(sql,'pg'),'SQL Server':convertD(sql,'mssql'),'Oracle':convertD(sql,'oracle'),'SQLite 3':convertD(sql,'sqlite')};document.getElementById('dialect-out').innerHTML=`<div class="sdiv" style="margin-top:0">Multi-Dialect Converter</div><div class="dial-grid">${Object.entries(dialects).map(([name,q])=>`<div class="dial-card"><h4>${name}</h4><pre>${q}</pre></div>`).join('')}</div>`}
+function convertD(sql,target){let q=sql;if(target==='mssql'){q=q.replace(/LIMIT\s+(\d+)/gi,(m,n)=>``);q=q.replace(/SELECT/i,`SELECT TOP ${sql.match(/LIMIT\s+(\d+)/i)?.[1]||10}`);q=q.replace(/LIMIT\s+\d+\s*(OFFSET\s+\d+)?/gi,'');q=q.replace(/NOW\(\)/gi,'GETDATE()')}else if(target==='oracle'){q=q.replace(/LIMIT\s+\d+\s*(OFFSET\s+\d+)?/gi,'FETCH FIRST 10 ROWS ONLY');q=q.replace(/NOW\(\)/gi,'SYSDATE');q=q.replace(/IFNULL\(/gi,'NVL(')}else if(target==='sqlite'){q=q.replace(/NOW\(\)/gi,"DATETIME('now')");q=q.replace(/ILIKE/gi,'LIKE')}else if(target==='mysql'){q=q.replace(/ILIKE/gi,'LIKE');q=q.replace(/::[\w]+/gi,'')}return q}
+function renderBottleneckTab(c,tables,errors){const issues=[];if(!c.where&&c.from)issues.push({sev:'critical',icon:'🔴',title:'Full Table Scan',desc:`No WHERE clause on <code>${c.from.table}</code>. All rows are read every execution.`,cls:'bt-crit',scls:'sev-crit'});if(c.select==='*')issues.push({sev:'high',icon:'🟠',title:'SELECT * Anti-Pattern',desc:'Fetching all columns prevents index-only scans and increases I/O.',cls:'bt-high',scls:'sev-high'});if(c.subqueries.length>1)issues.push({sev:'high',icon:'🟠',title:'Multiple Correlated Subqueries',desc:`${c.subqueries.length} subqueries — O(n²) complexity.`,cls:'bt-high',scls:'sev-high'});if(c.join.length>3)issues.push({sev:'medium',icon:'🟡',title:'Many-Table JOIN',desc:`${c.join.length+1} tables joined. Multiply cardinality risk.`,cls:'bt-med',scls:'sev-med'});if(c.orderBy&&!c.limit)issues.push({sev:'medium',icon:'🟡',title:'Sort Without LIMIT',desc:'Full sort without limit — add LIMIT or index on ORDER BY column.',cls:'bt-med',scls:'sev-med'});if(errors.length)issues.push({sev:'critical',icon:'🔴',title:`${errors.length} Error(s)`,desc:'Syntax or schema errors detected.',cls:'bt-crit',scls:'sev-crit'});if(!issues.length)issues.push({sev:'low',icon:'🟢',title:'No Bottlenecks Detected',desc:'Query appears well-structured. Run EXPLAIN ANALYZE in your real database.',cls:'bt-low',scls:'sev-low'});document.getElementById('bottleneck-out').innerHTML=`<div class="sdiv" style="margin-top:0">Performance Bottleneck Detector</div><div class="bt-list">${issues.map(i=>`<div class="bt-item ${i.cls}"><div class="bt-icon">${i.icon}</div><div><div class="bt-ttl">${i.title}</div><div class="bt-desc">${i.desc}</div></div><span class="bt-sev ${i.scls}">${i.sev.toUpperCase()}</span></div>`).join('')}</div>`;
+}
+function renderEdgeTab(c,tables){const tbl=c.from?tables[c.from.table.toLowerCase()]:null;const cases=[{icon:'🔲',label:'NULL Handling',desc:tbl&&tbl.rows.some(r=>Object.values(r).includes(null))?'NULLs detected — verify IS NULL behavior':'No NULLs detected',cls:tbl&&tbl.rows.some(r=>Object.values(r).includes(null))?'ec-warn':'ec-ok'},{icon:'🔁',label:'Duplicate Rows',desc:tbl&&(new Set(tbl.rows.map(r=>JSON.stringify(r))).size<tbl.rows.length)?'Duplicate rows found':'No duplicates detected',cls:'ec-ok'},{icon:'◻',label:'Empty Table',desc:tbl&&!tbl.rows.length?'⚠ Table is empty':'Table has data',cls:tbl&&!tbl.rows.length?'ec-risk':'ec-ok'},{icon:'⚡',label:'Division by Zero',desc:c.select&&/\/\s*0\b/.test(c.select)?'⚠ Potential division by zero':'No division operations',cls:'ec-ok'},{icon:'📦',label:'Large Result Set',desc:!c.limit?'⚠ No LIMIT — may return all rows':'LIMIT applied',cls:!c.limit?'ec-warn':'ec-ok'},{icon:'🔃',label:'Infinite Recursion',desc:c.isRecursive?'Recursive CTE — ensure termination condition':'No recursive CTE',cls:c.isRecursive?'ec-warn':'ec-ok'},{icon:'⚖️',label:'Overflow Risk',desc:c.select&&/(SUM|COUNT)\s*\(/i.test(c.select)?'Aggregates present — check integer overflow':'No overflow risk',cls:'ec-ok'}];document.getElementById('edge-out').innerHTML=`<div class="sdiv" style="margin-top:0">Edge Case Analyzer</div><div class="ec-grid">${cases.map(ec=>`<div class="ec-item ${ec.cls}"><span class="ec-ico">${ec.icon}</span><div><span class="ec-lbl">${ec.label}</span><span class="ec-desc">${ec.desc}</span></div></div>`).join('')}</div>`;
+}
+function renderInterviewTab(c,sql,dialect){const alt=c.groupBy?`-- Alternative using window function:\nSELECT DISTINCT dept_id,\n  AVG(salary) OVER (PARTITION BY dept_id) AS avg_salary\nFROM employees;`:c.join.length?`-- Alternative using EXISTS:\nSELECT e.*\nFROM employees e\nWHERE EXISTS (\n  SELECT 1 FROM departments d\n  WHERE d.id = e.dept_id\n);`:'-- Use a CTE for readability\nWITH filtered AS (\n  SELECT * FROM table WHERE ...\n)\nSELECT * FROM filtered;';document.getElementById('interview-out').innerHTML=`<div class="sdiv" style="margin-top:0">SQL Interview Mode</div><div class="iv-sec"><h4>✓ Expected Answer</h4><div class="content"><pre style="font-family:var(--mono);font-size:12px;white-space:pre-wrap">${sql}</pre></div></div><div class="iv-sec"><h4>⟳ Alternative Solution</h4><div class="content"><pre style="font-family:var(--mono);font-size:12px;white-space:pre-wrap">${alt}</pre></div></div><div class="iv-sec"><h4>⚡ Optimized Solution</h4><div class="content">${c.select==='*'?'Replace <code>SELECT *</code> with explicit columns.<br>':''}${!c.where?'Add a WHERE filter to reduce table scan.<br>':''}${c.orderBy&&!c.limit?'Add LIMIT to avoid full sort.<br>':''}${c.subqueries.length>1?'Replace correlated subqueries with JOINs.<br>':''}${!c.select||c.select!=='*'&&c.where?'Query is already well-optimized.':''}</div></div><div class="iv-sec"><h4>⚠ Common Mistakes</h4><div class="content">• ${c.groupBy?'Forgetting non-aggregated SELECT columns must be in GROUP BY':'Using GROUP BY without aggregate functions — use DISTINCT'}.<br>• ${c.join.length?'Missing ON condition causes Cartesian product':'Using WHERE instead of JOINs for multi-table queries'}.<br>• Comparing with NULL using <code>=</code> instead of <code>IS NULL</code>.<br>• ${c.having?'Confusing WHERE (rows) with HAVING (groups)':'Using HAVING without GROUP BY'}.</div></div><div class="iv-sec"><h4>💬 Discussion Points</h4><div class="content">• Explain SQL execution order and why WHERE evaluates before SELECT.<br>• ${c.join.length?`Why Hash Join vs Nested Loop for this join?`:'When to use JOIN vs subquery?'}<br>• ${c.groupBy?'When to use window functions instead of GROUP BY?':'ROW_NUMBER() vs RANK() vs DENSE_RANK()?'}<br>• What indexes would you add and what are write-performance tradeoffs?</div></div>`;
+}
+let tutorSql='',tutorClauses=null;
+function renderTutorTab(c,sql){tutorSql=sql;tutorClauses=c;callAITutor('beginner')}
+function setTutorLvl(level,el){document.querySelectorAll('.tlvl').forEach(t=>t.classList.toggle('active',t===el));if(tutorSql)callAITutor(level)}
+async function callAITutor(level){
+  const out=document.getElementById('tutor-out');if(!out)return;
+  if(!tutorSql){out.innerHTML='<span style="color:var(--text3);font-family:var(--mono);font-size:11px">Run a query first.</span>';return}
+  out.innerHTML='<span class="ai-loading">AI Tutor is analyzing your query...</span>';
+  const prompts={beginner:`Explain this SQL query to a complete beginner. Use simple English, analogies, no jargon. Max 200 words. Bullet points.\n\nQuery:\n${tutorSql}`,intermediate:`Explain this query to an intermediate developer. Cover execution plan, performance, when to use this pattern, and 2 alternatives. Max 250 words.\n\nQuery:\n${tutorSql}`,expert:`Expert analysis of this SQL: execution plan internals, cost estimates, optimizer behavior, index usage, pitfalls at scale, advanced optimization. Max 300 words.\n\nQuery:\n${tutorSql}`};
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompts[level]||prompts.beginner}]})});
+    const data=await res.json();
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    out.innerHTML=text?`<div style="white-space:pre-wrap;line-height:1.8">${text}</div>`:'<span style="color:var(--rose)">AI Tutor unavailable.</span>';
+  }catch(e){
+    const fallbacks={beginner:`Think of SQL like asking a question to a database librarian:\n\n• FROM: "Which shelf?" — selects the table\n• WHERE: "Only show AI books" — filters rows\n• GROUP BY: "Stack by author" — groups rows\n• HAVING: "Only groups with 3+ books" — filters groups\n• SELECT: "Show title and author" — projects columns\n• ORDER BY: "Sort alphabetically" — sorts result\n• LIMIT: "Give me the first 5" — restricts count`,intermediate:`Execution plan for your query:\n\n1. Seq Scan on ${tutorClauses?.from?.table||'table'} (reads all rows into buffer)\n2. ${tutorClauses?.join?.length?'Hash Join (build hash table, probe for matches)':'Filter applied in-place'}\n3. ${tutorClauses?.groupBy?'Hash Aggregate (group by key, compute aggregates)':'Projection (SELECT columns resolved)'}\n4. ${tutorClauses?.orderBy?'Sort (quicksort in-memory, mergesort if large)':'Result returned directly'}\n\nTip: ${!tutorClauses?.where?'Add WHERE for early filtering':'Consider composite index for this pattern'}.`,expert:`Query type: ${tutorClauses?.groupBy?'Aggregate':'Projection'} on ${tutorClauses?.join?.length||0} joined table(s).\n\nOptimizer strategy:\n• Cardinality estimation drives join order\n• ${tutorClauses?.join?.length?'Hash Join for unknown selectivity':'Sequential scan — no applicable index'}\n• ${tutorClauses?.groupBy?'HashAggregate over SortAggregate at this size':'No aggregate overhead'}\n\nAt scale (10M+ rows):\n• Partition table on ${tutorClauses?.groupBy||'primary key'}\n• Materialized CTEs prevent redundant computation\n• Partial indexes on filtered subsets reduce bloat`};
+    out.innerHTML=`<div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.8;white-space:pre-wrap">${fallbacks[level]||fallbacks.beginner}</div>`;
+  }
+}
+function renderPerfCard(perf){
+  document.getElementById('score-panel').style.display='block';
+  document.getElementById('big-score').textContent=perf.total;
+  const dims=[{label:'Performance',val:perf.perf,c:'#7c6df7'},{label:'Readability',val:perf.read,c:'#38e5c5'},{label:'Maintainability',val:perf.maint,c:'#f5c842'},{label:'Scalability',val:perf.scale,c:'#4ade80'}];
+  document.getElementById('perf-dims').innerHTML=dims.map(d=>`<div class="pd"><div class="pd-lbl">${d.label}</div><div class="pd-val" style="color:${d.c}">${d.val}</div><div class="pd-bar"><div class="pd-fill" style="width:${d.val}%;background:${d.c}"></div></div></div>`).join('');
+}
+</script>
+</body>
+</html>
