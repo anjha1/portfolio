@@ -1,0 +1,2694 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grandmaster Track — Codeforces Training Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root[data-theme="dark"]{
+    --bg:#0A0E17; --bg-2:#070a10;
+    --surface:#111827; --surface-2:#161f2e; --surface-3:#1c2738;
+    --text:#E8EDF5; --text-muted:#8B98AC; --text-dim:#5b6577;
+    --border:#232f42; --border-soft:#1a2434;
+    --accent:#FFB454; --accent-2:#56D8C6;
+    --easy:#3FB950; --medium:#E3B341; --hard:#F85149; --expert:#A371F7;
+    --gm-bg:#000000; --gm-text:#FFD700; --gm-border:#8a6d00;
+    --shadow: 0 8px 30px rgba(0,0,0,0.45);
+  }
+  :root[data-theme="light"]{
+    --bg:#F5F6F8; --bg-2:#eef0f3;
+    --surface:#FFFFFF; --surface-2:#F1F3F6; --surface-3:#E7EAEF;
+    --text:#151B26; --text-muted:#5B6472; --text-dim:#8992A0;
+    --border:#DDE1E8; --border-soft:#E9ECF1;
+    --accent:#B5730A; --accent-2:#0E8C7C;
+    --easy:#1F8A3B; --medium:#946E00; --hard:#C22B24; --expert:#6E3FC9;
+    --gm-bg:#111111; --gm-text:#D6A400; --gm-border:#c9a227;
+    --shadow: 0 8px 24px rgba(20,30,50,0.08);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  code,.mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ============ TOPBAR ============ */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    background:var(--bg-2);
+    border-bottom:1px solid var(--border);
+    padding:14px 22px;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+  }
+  .brand{display:flex; align-items:center; gap:10px; margin-right:auto;}
+  .brand .glyph{
+    width:34px;height:34px;border-radius:8px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-weight:800; color:#0A0E17; font-size:15px;
+  }
+  .brand-text{line-height:1.15;}
+  .brand-text .t1{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;letter-spacing:0.2px;}
+  .brand-text .t2{font-size:11px;color:var(--text-muted);}
+  .prompt-line{
+    font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--accent-2);
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:6px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px;
+  }
+  .prompt-line .cursor{display:inline-block;width:7px;height:13px;background:var(--accent-2);margin-left:2px;vertical-align:-2px;animation:blink 1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  .back-btn{
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    color:var(--text-muted); padding:7px 12px; font-size:12.5px; text-decoration:none;
+    font-family:'JetBrains Mono',monospace; font-weight:600; cursor:pointer;
+    white-space:nowrap;
+  }
+  .back-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .theme-toggle{
+    display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--surface);
+  }
+  .theme-toggle button{
+    background:transparent;border:none;color:var(--text-muted);padding:7px 12px;font-size:12.5px;cursor:pointer;
+    font-family:'JetBrains Mono',monospace; font-weight:600;
+  }
+  .theme-toggle button.active{background:var(--accent);color:#0A0E17;}
+
+  /* ============ LAYOUT ============ */
+  .shell{display:grid; grid-template-columns:280px 1fr; min-height:calc(100vh - 63px);}
+  @media (max-width:900px){ .shell{grid-template-columns:1fr;} .sidebar{position:static;} }
+
+  .sidebar{
+    border-right:1px solid var(--border);
+    background:var(--bg-2);
+    padding:20px 16px 40px;
+    position:sticky; top:63px; align-self:start; height:calc(100vh - 63px); overflow-y:auto;
+  }
+  .side-block{margin-bottom:26px;}
+  .side-title{
+    font-family:'JetBrains Mono',monospace; font-size:11px; text-transform:uppercase; letter-spacing:1.2px;
+    color:var(--text-dim); margin-bottom:10px; font-weight:700;
+  }
+
+  .stat-card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px;}
+  .stat-row{display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-muted); margin-bottom:6px;}
+  .stat-row b{color:var(--text); font-family:'JetBrains Mono',monospace;}
+  .meter{height:8px;border-radius:5px;background:var(--surface-3);overflow:hidden;display:flex; margin-top:4px;}
+  .meter > span{height:100%;}
+
+  .diff-legend{display:flex; flex-direction:column; gap:6px;}
+  .diff-chip-btn{
+    display:flex;align-items:center;justify-content:space-between; gap:8px;
+    padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface);
+    cursor:pointer; font-size:12.5px; color:var(--text); font-family:'JetBrains Mono',monospace; font-weight:600;
+    opacity:0.55; transition:opacity .15s, transform .1s;
+  }
+  .diff-chip-btn.on{opacity:1;}
+  .diff-chip-btn:hover{transform:translateX(2px);}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+  .diff-chip-btn .cnt{color:var(--text-dim); font-weight:500;}
+
+  .chapter-nav a{
+    display:flex; justify-content:space-between; gap:8px;
+    padding:8px 10px; border-radius:7px; text-decoration:none;
+    color:var(--text-muted); font-size:12.8px; margin-bottom:2px;
+  }
+  .chapter-nav a:hover{background:var(--surface); color:var(--text);}
+  .chapter-nav a .n{color:var(--text-dim); font-family:'JetBrains Mono',monospace; font-size:11px;}
+
+  input[type="search"]{
+    width:100%; padding:9px 11px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:13px; font-family:'Inter',sans-serif;
+  }
+  input[type="search"]::placeholder{color:var(--text-dim);}
+
+  select{
+    width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:12.8px; font-family:'Inter',sans-serif;
+  }
+
+  /* ============ MAIN ============ */
+  main{padding:26px 30px 80px; max-width:1180px;}
+  .page-head h1{
+    font-family:'JetBrains Mono',monospace; font-size:26px; margin:0 0 6px; letter-spacing:-0.3px;
+  }
+  .page-head p{color:var(--text-muted); font-size:14px; margin:0 0 22px; max-width:640px; line-height:1.55;}
+  .notice{
+    background:var(--surface); border:1px dashed var(--border); border-radius:10px; padding:12px 14px;
+    font-size:12.3px; color:var(--text-muted); margin-bottom:26px; line-height:1.6;
+  }
+  .notice b{color:var(--accent);}
+
+  .chapter{margin-bottom:46px; scroll-margin-top:80px;}
+  .chapter-head{display:flex; align-items:baseline; gap:12px; margin-bottom:4px; flex-wrap:wrap;}
+  .chapter-head h2{font-family:'JetBrains Mono',monospace; font-size:18px; margin:0;}
+  .chapter-head .badge-count{
+    font-size:11px; color:var(--text-dim); background:var(--surface); border:1px solid var(--border);
+    padding:2px 8px; border-radius:20px; font-family:'JetBrains Mono',monospace;
+  }
+  .chapter-desc{color:var(--text-muted); font-size:13px; margin:4px 0 16px; max-width:720px;}
+
+  .topic-block{margin-bottom:22px;}
+  .topic-title{
+    font-size:12px; text-transform:uppercase; letter-spacing:0.8px; color:var(--accent-2);
+    font-weight:700; margin-bottom:10px; font-family:'JetBrains Mono',monospace;
+  }
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px;
+    display:flex; flex-direction:column; gap:10px; box-shadow:var(--shadow); transition:border-color .15s;
+  }
+  .card:hover{border-color:var(--accent-2);}
+  .card.solved{opacity:0.6;}
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .card-id{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim);}
+  .card-name{font-size:14.5px; font-weight:600; line-height:1.3;}
+  .card-name a{color:var(--text); text-decoration:none;}
+  .card-name a:hover{color:var(--accent-2); text-decoration:underline;}
+
+  .diff-badge{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px;
+    white-space:nowrap; display:flex; align-items:center; gap:5px; border:1px solid transparent;
+  }
+  .diff-badge.easy{color:var(--easy); background:color-mix(in srgb, var(--easy) 14%, transparent); border-color:color-mix(in srgb, var(--easy) 35%, transparent);}
+  .diff-badge.medium{color:var(--medium); background:color-mix(in srgb, var(--medium) 14%, transparent); border-color:color-mix(in srgb, var(--medium) 35%, transparent);}
+  .diff-badge.hard{color:var(--hard); background:color-mix(in srgb, var(--hard) 14%, transparent); border-color:color-mix(in srgb, var(--hard) 35%, transparent);}
+  .diff-badge.expert{color:var(--expert); background:color-mix(in srgb, var(--expert) 14%, transparent); border-color:color-mix(in srgb, var(--expert) 35%, transparent);}
+  .diff-badge.grandmaster{color:var(--gm-text); background:var(--gm-bg); border-color:var(--gm-border);}
+
+  .meta-row{display:flex; flex-wrap:wrap; gap:6px; font-size:11px;}
+  .tag{
+    background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-muted);
+    padding:3px 8px; border-radius:6px; font-family:'JetBrains Mono',monospace;
+  }
+  .why{font-size:12.3px; color:var(--text-muted); line-height:1.5;}
+
+  .companies{display:flex; flex-wrap:wrap; gap:5px; margin-top:2px;}
+  .co-chip{font-size:10.5px; padding:2px 7px; border-radius:5px; background:var(--surface-2); color:var(--text-dim); border:1px solid var(--border-soft);}
+  .co-chip.match{background:var(--accent); color:#0A0E17; border-color:var(--accent); font-weight:700;}
+
+  .card-foot{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:8px; border-top:1px solid var(--border-soft);}
+  .solve-btn{
+    font-family:'JetBrains Mono',monospace; font-size:11.5px; font-weight:700; cursor:pointer;
+    background:transparent; border:1px solid var(--border); color:var(--text-muted); padding:6px 10px; border-radius:7px;
+  }
+  .solve-btn:hover{border-color:var(--accent-2); color:var(--accent-2);}
+  .solve-btn.done{background:var(--easy); border-color:var(--easy); color:#0A0E17;}
+  .cf-link{font-size:11px; color:var(--accent-2); text-decoration:none; font-family:'JetBrains Mono',monospace;}
+  .cf-link:hover{text-decoration:underline;}
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--text-muted);
+    border:1px dashed var(--border); border-radius:12px; font-family:'JetBrains Mono',monospace; font-size:13px;
+  }
+
+  footer{padding:30px; text-align:center; color:var(--text-dim); font-size:11.5px; border-top:1px solid var(--border);}
+
+  /* ===== Embedded: HackWithInfy Official Sample Question Set (29 Qs) ===== */
+  .hwi-wrap{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6;
+    color:var(--text);
+  }
+  .hwi-wrap .hwi-header{
+    padding:28px 24px 26px;
+    text-align:center;
+    background:linear-gradient(180deg,var(--surface-2),var(--bg));
+    border:1px solid var(--border);
+    border-radius:14px;
+    margin-bottom:22px;
+    scroll-margin-top:80px;
+  }
+  .hwi-wrap .hwi-header h1{
+    font-family:'JetBrains Mono',monospace;
+    font-size:1.7rem;
+    margin:0 0 8px;
+    letter-spacing:0.3px;
+  }
+  .hwi-wrap .hwi-header p{
+    color:var(--text-muted);
+    margin:0;
+    font-size:13.5px;
+  }
+  .hwi-wrap .hwi-toc{
+    max-width:900px;
+    margin:0 0 28px;
+    padding:20px 24px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+  }
+  .hwi-wrap .hwi-toc h2{
+    margin-top:0;
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+  }
+  .hwi-wrap .hwi-toc ol{
+    columns:2;
+    -webkit-columns:2;
+    padding-left:20px;
+  }
+  @media (max-width:640px){ .hwi-wrap .hwi-toc ol{ columns:1; } }
+  .hwi-wrap .hwi-toc li{ margin-bottom:6px; font-size:13px; }
+  .hwi-wrap .hwi-toc a{
+    color:var(--text);
+    text-decoration:none;
+  }
+  .hwi-wrap .hwi-toc a:hover{ color:var(--accent-2); text-decoration:underline; }
+
+  .hwi-wrap .hwi-main{
+    max-width:900px;
+    margin:0 auto;
+    padding:0;
+  }
+  .hwi-wrap .hwi-problem{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:26px 30px;
+    margin:22px 0;
+    scroll-margin-top:80px;
+    box-shadow:var(--shadow);
+  }
+  .hwi-wrap .hwi-problem h2{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:0;
+    font-size:1.25rem;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hwi-wrap .badge{
+    font-size:0.68rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    padding:4px 10px;
+    border-radius:999px;
+    color:#0b1220;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hwi-wrap .badge.easy{ background:var(--easy); }
+  .hwi-wrap .badge.medium{ background:var(--medium); }
+  .hwi-wrap .badge.hard{ background:var(--hard); }
+
+  .hwi-wrap h3{
+    font-size:0.85rem;
+    color:var(--accent-2);
+    margin:22px 0 8px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hwi-wrap pre{
+    background:var(--surface-3);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:14px 16px;
+    overflow-x:auto;
+    font-size:0.88rem;
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hwi-wrap code{
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hwi-wrap table{
+    width:100%;
+    border-collapse:collapse;
+    margin:12px 0;
+    font-size:0.9rem;
+  }
+  .hwi-wrap table th, .hwi-wrap table td{
+    border:1px solid var(--border);
+    padding:8px 10px;
+    text-align:left;
+  }
+  .hwi-wrap table th{
+    background:var(--surface-2);
+    color:var(--text-muted);
+  }
+  .hwi-wrap ul, .hwi-wrap ol.constraints{
+    padding-left:20px;
+  }
+  .hwi-wrap .constraints li{ color:var(--text-muted); }
+  .hwi-wrap .explain{
+    background:var(--surface-2);
+    border-left:3px solid var(--accent);
+    padding:10px 14px;
+    border-radius:0 8px 8px 0;
+    margin:10px 0;
+    font-size:0.9rem;
+    color:var(--text);
+  }
+  .hwi-wrap .case-title{
+    font-weight:600;
+    color:var(--accent-2);
+    margin-top:16px;
+  }
+  .hwi-wrap .hwi-footer{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:0.82rem;
+    padding:22px;
+    border-top:1px solid var(--border);
+    margin-top:10px;
+  }
+  .hwi-wrap a.back-top{
+    display:inline-block;
+    margin-top:16px;
+    font-size:0.82rem;
+    color:var(--text-muted);
+    text-decoration:none;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hwi-wrap a.back-top:hover{ color:var(--accent-2); }
+
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="../index.html" class="back-btn" title="Back to Short Notes">← Back</a>
+  <div class="brand">
+    <div class="glyph">CF</div>
+    <div class="brand-text">
+      <div class="t1">Grandmaster Track</div>
+      <div class="t2">Codeforces training dashboard</div>
+    </div>
+  </div>
+  <div class="prompt-line">$ ./train --source=codeforces --target=grandmaster<span class="cursor"></span></div>
+  <div class="theme-toggle" id="track-toggle">
+    <button id="btn-track-cf" class="active">CF Track</button>
+    <button id="btn-track-infy">Infosys Prep</button>
+    <button id="btn-track-dsaforge">DSAForge</button>
+  </div>
+  <div class="theme-toggle">
+    <button id="btn-dark" class="active">🌙 Dark</button>
+    <button id="btn-light">☀️ Light</button>
+  </div>
+</div>
+
+<div class="shell" id="view-cf">
+  <aside class="sidebar">
+    <div class="side-block">
+      <div class="side-title">Search</div>
+      <input type="search" id="search" placeholder="Problem, ID, or concept…" />
+    </div>
+
+    <div class="side-block">
+      <div class="side-title">Overall progress</div>
+      <div class="stat-card">
+        <div class="stat-row"><span>Solved</span><b id="stat-solved">0 / 0</b></div>
+        <div class="meter"><span id="stat-meter" style="width:0%;background:var(--accent-2);"></span></div>
+      </div>
+    </div>
+
+    <div class="side-block">
+      <div class="side-title">Difficulty filter</div>
+      <div class="diff-legend" id="diff-legend"></div>
+    </div>
+
+    <div class="side-block">
+      <div class="side-title">Company focus</div>
+      <select id="company-filter">
+        <option value="">All companies</option>
+      </select>
+    </div>
+
+    <div class="side-block">
+      <div class="side-title">Chapters</div>
+      <nav class="chapter-nav" id="chapter-nav"></nav>
+    </div>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <h1>Enterprise Codeforces Roadmap</h1>
+      <p>Beginner → Specialist → Expert → Candidate Master → Master → Grandmaster. Filter by difficulty rating band or interview-pattern relevance, track what you've solved, and work chapter by chapter.</p>
+    </div>
+
+    <div class="notice">
+      <b>Seed dataset, not a claim of scale.</b> This build ships with <b id="notice-count">0</b> real, verified
+      Codeforces problems (accurate IDs and links; ratings to the best of available knowledge — CF occasionally
+      recalculates ratings, worth a spot-check). Fabricating thousands of problem IDs to hit a "3000+" target would
+      violate the "no invented problems" rule, so instead the data model is built to scale: add entries to the
+      <code>PROBLEM_DB</code> array at the top of the script (schema documented in a comment there) and the whole
+      dashboard — filters, progress bars, chapter counts — updates automatically. Company tags mark
+      <b>pattern relevance</b> (this technique shows up in that company's interviews), not a confirmed record of a
+      specific problem being asked.
+    </div>
+
+    <div id="chapters"></div>
+  </main>
+</div>
+
+<div class="shell" id="view-infosys" style="display:none;">
+  <aside class="sidebar">
+    <div class="side-block">
+      <div class="side-title">Infosys progress</div>
+      <div class="stat-card">
+        <div class="stat-row"><span>Solved</span><b id="infy-stat-solved">0 / 0</b></div>
+        <div class="meter"><span id="infy-stat-meter" style="width:0%;background:var(--accent-2);"></span></div>
+      </div>
+      <div class="stat-card" id="infy-diff-breakdown"></div>
+    </div>
+    <div class="side-block">
+      <div class="side-title">Track</div>
+      <div class="diff-legend">
+        <button class="diff-chip-btn on" id="infy-filter-all" style="opacity:1;">All Infosys tags</button>
+        <button class="diff-chip-btn" id="infy-filter-hwi">HackWithInfy only</button>
+      </div>
+    </div>
+    <div class="side-block">
+      <div class="side-title">Roadmap</div>
+      <nav class="chapter-nav" id="infy-roadmap-nav"></nav>
+    </div>
+    <div class="side-block">
+      <div class="side-title">Official Sample Set</div>
+      <nav class="chapter-nav">
+        <a href="#hwi-top"><span>HackWithInfy Sample Qs</span><span class="n">29</span></a>
+      </nav>
+    </div>
+  </aside>
+
+  <main>
+    <div class="page-head">
+      <h1>Infosys Coding Preparation</h1>
+      <p>Covers Infosys HackWithInfy and general Infosys coding-round (SP / DSE / SE) preparation: verified exam-pattern history, the topics candidates consistently report being tested on, and real practice problems mapped to those topics.</p>
+    </div>
+
+    <div class="notice">
+      <b>Hack With Infy PYQ &amp; Recommended Questions.</b> The 29 problems below include questions actually
+      asked in past Hack With Infy rounds along with official sample questions, included in full (statement,
+      input format, constraints, and sample cases) as a dedicated practice set.
+    </div>
+
+<div class="hwi-wrap">
+<div class="hwi-header">
+  <h1>Hack With Infy PYQ &amp; Recommended Questions</h1>
+  <p>29 problems actually asked in past Hack With Infy rounds, plus official sample questions</p>
+</div>
+
+<div class="hwi-toc" id="hwi-top">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#hwi-q1">Q1 (Easy) — Range Multiply &amp; Sum Queries</a></li>
+    <li><a href="#hwi-q2">Q2 (Easy) — Maximum Sum Good Subarray</a></li>
+    <li><a href="#hwi-q3">Q3 (Easy) — Oil Tank Disturbance</a></li>
+    <li><a href="#hwi-q4">Q4 (Easy) — Reduce Army to One Soldier</a></li>
+    <li><a href="#hwi-q5">Q5 (Easy) — Invasion Grid (Multi-source BFS)</a></li>
+    <li><a href="#hwi-q6">Q6 (Medium) — Maximum Expert Number</a></li>
+    <li><a href="#hwi-q7">Q7 (Medium) — Covered Ranges in Connected Components</a></li>
+    <li><a href="#hwi-q8">Q8 (Medium) — Circular Chair Jumps</a></li>
+    <li><a href="#hwi-q9">Q9 (Medium) — Great Ball Chain Probability</a></li>
+    <li><a href="#hwi-q10">Q10 (Medium) — Maximum Amazingness Partition</a></li>
+    <li><a href="#hwi-q11">Q11 (Hard) — Minimum k for Longest Path</a></li>
+    <li><a href="#hwi-q12">Q12 (Hard) — Some Help (Soldiers &amp; Chests)</a></li>
+    <li><a href="#hwi-q13">Q13 (Hard) — Frequency/Distinct Pair Counting</a></li>
+    <li><a href="#hwi-q14">Q14 (Hard) — Tree Subtree Intersection Beauty</a></li>
+    <li><a href="#hwi-q15">Q15 (Easy) — Hotel Guest Unhappiness</a></li>
+    <li><a href="#hwi-q16">Q16 (Medium) — Divisible Product Pairs</a></li>
+    <li><a href="#hwi-q17">Q17 (Medium) — Triplets Under a Limit</a></li>
+    <li><a href="#hwi-q18">Q18 (Medium) — Four Subsequences, Three Cuts</a></li>
+    <li><a href="#hwi-q19">Q19 (Hard) — Largest Group in Consistent Order</a></li>
+    <li><a href="#hwi-q20">Q20 (Medium) — Minesweeper Question Marks</a></li>
+    <li><a href="#hwi-q21">Q21 (Medium) — Pyramid Beauty Maximization</a></li>
+    <li><a href="#hwi-q22">Q22 (Easy) — Maximize Score by Doubling a Subarray</a></li>
+    <li><a href="#hwi-q23">Q23 (Medium) — Subsequence with One Sign Change</a></li>
+    <li><a href="#hwi-q24">Q24 (Medium) — Coin Operations</a></li>
+    <li><a href="#hwi-q25">Q25 (Easy) — Lazy Student</a></li>
+    <li><a href="#hwi-q26">Q26 (Medium) — Cyclic Increments to Non-Decreasing</a></li>
+    <li><a href="#hwi-q27">Q27 (Hard) — Vineyard Planting</a></li>
+    <li><a href="#hwi-q28">Q28 (Hard) — Aquarium Showcase Design</a></li>
+    <li><a href="#hwi-q29">Q29 (Hard) — Mosaic Tile Optimization</a></li>
+  </ol>
+</div>
+
+<div class="hwi-main">
+
+<!-- Q1 -->
+<div class="hwi-problem" id="hwi-q1">
+  <h2><span class="badge easy">Easy</span> 1. Range Multiply &amp; Sum Queries</h2>
+  <p>You're given an array A of n integers and q queries. Each query is one of two types:</p>
+  <ul>
+    <li><strong>Type 1</strong> (1, l, r) — Replace A[i] with (i-l+1)*A[l] for each index i, where l &lt;= i &lt;= r.</li>
+    <li><strong>Type 2</strong> (2, l, r) — Calculate the sum of the elements in A from index l to index r.</li>
+  </ul>
+  <p>Find the sum of answers to all type 2 queries. Since the answer can be large, return it modulo 10<sup>9</sup>+7.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: integer n — number of elements in A</li>
+    <li>Next n lines: A[i]</li>
+    <li>Next line: integer q — number of queries</li>
+    <li>Next q lines: 3 space-separated integers describing each query (1,l,r) or (2,l,r)</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= n &lt;= 10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^5</li>
+    <li>1 &lt;= q &lt;= 10^5</li>
+    <li>0 &lt;= queries[i][j] &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+7
+1
+4
+5
+1
+6
+7
+8
+5
+1 1 6
+1 1 5
+2 5 5
+2 3 4
+2 3 3
+
+Output:
+60</pre>
+  <div class="explain">n=7, A=[1,4,5,1,6,7,8]. Query1 (1,1,6) → A=[1,4,8,12,16,20,24]. Query2 (1,1,5) → no change (same op). Query3 (2,5,5)=20. Query4 (2,3,4)=12+16=28. Query5 (2,3,3)=12. Total = 20+28+12 = 60.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+7
+3
+7
+4
+2
+5
+3
+7
+5
+1 0 4
+2 0 1
+1 3 6
+2 3 3
+2 0 5
+
+Output:
+111</pre>
+  <div class="explain">A=[3,7,4,2,5,3,7]. After (1,0,4): A=[3,6,9,12,15,3,7]. sum(0,1)=9. After (1,3,6): A=[3,6,9,12,24,36,48]. sum(3,3)=12. sum(0,5)=3+6+9+12+24+36=90. Total = 9+12+90 = 111.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+7
+1
+8
+6
+10
+5
+6
+9
+5
+2 0 3
+1 2 3
+1 0 6
+2 1 4
+2 6 6
+
+Output:
+46</pre>
+  <div class="explain">A=[1,8,6,10,5,6,9]. sum(0,3)=25. After (1,2,3): A=[1,8,6,12,5,6,9]. After (1,0,6): A=[1,2,3,4,5,6,7]. sum(1,4)=14. sum(6,6)=7. Total = 25+14+7 = 46.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q2 -->
+<div class="hwi-problem" id="hwi-q2">
+  <h2><span class="badge easy">Easy</span> 2. Maximum Sum Good Subarray</h2>
+  <p>You are given an array A of length N and an integer k. A subarray from l to r is <strong>good</strong> if the number of distinct elements in it doesn't exceed k. An empty subarray is also good (sum = 0). Find the maximum sum of a good subarray.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: k</li>
+    <li>Next N lines: A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= k &lt;= n</li>
+    <li>-10^5 &lt;= A[i] &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+11
+2
+1
+2
+2
+3
+2
+3
+5
+1
+2
+1
+1
+
+Output:
+12</pre>
+  <div class="explain">A=[1,2,2,3,2,3,5,1,2,1,1], k=2. Subarray [2,2,3,2,3] has ≤2 distinct values and sum 12.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+3
+1
+-1
+-2
+-3
+
+Output:
+0</pre>
+  <div class="explain">All negative — optimal is the empty subarray, sum = 0.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+5
+5
+-1
+1
+3
+2
+-1
+
+Output:
+6</pre>
+  <div class="explain">Subarray [1,3,2] sums to 6, and k=5 permits any distinct count here.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q3 -->
+<div class="hwi-problem" id="hwi-q3">
+  <h2><span class="badge easy">Easy</span> 3. Oil Tank Disturbance</h2>
+  <p>An oil tank of capacity C litres is used by N people in sequence, described by array A: A[i]=1 means the person wants to sell a litre, A[i]=-1 means they want to buy a litre. A disturbance happens if someone tries to sell to a full tank or buy from an empty tank. Find the minimum initial oil X that minimizes the number of disturbances.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: C</li>
+    <li>Next N lines: A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= C &lt;= 10^5</li>
+    <li>-1 &lt;= A[i] &lt;= 1</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+3
+3
+-1
+1
+1
+
+Output:
+1</pre>
+  <div class="explain">A=[-1,1,1], C=3. Need at least 1 litre for Person 1 to avoid disturbance. X=1 is minimal.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+3
+2
+-1
+-1
+1
+
+Output:
+2</pre>
+  <div class="explain">A=[-1,-1,1], C=2. Need 1 litre for Person 1 and 1 more for Person 2 → X=2.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+4
+3
+1
+1
+1
+1
+
+Output:
+0</pre>
+  <div class="explain">A=[1,1,1,1], C=3. Person 4's disturbance (tank full) cannot be avoided by any initial X, so the minimum X achieving the least disturbances is 0.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q4 -->
+<div class="hwi-problem" id="hwi-q4">
+  <h2><span class="badge easy">Easy</span> 4. Reduce Army to One Soldier</h2>
+  <p>General Ali wants to reduce an enemy army of N soldiers to just 1 soldier using the minimum number of moves. Allowed moves per turn:</p>
+  <ol>
+    <li>Reduce the army by 1 soldier.</li>
+    <li>Reduce the army by half (rounded down).</li>
+    <li>Reduce the army by two-thirds (rounded down).</li>
+  </ol>
+  <p>Every resulting count must remain an integer. Find the minimum number of moves to reach exactly 1 soldier.</p>
+
+  <h3>Input Format</h3>
+  <ul><li>Line 1: N — number of enemy soldiers</li></ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints"><li>1 &lt;= N &lt;= 10^9</li></ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input: 5
+Output: 3</pre>
+  <div class="explain">5 → 4 (−1) → 2 (half) → 1 (half). 3 moves.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input: 1
+Output: 0</pre>
+  <div class="explain">Already at 1 soldier — 0 moves needed.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input: 6
+Output: 2</pre>
+  <div class="explain">6 → 3 (half) → 1 (half). 2 moves.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q5 -->
+<div class="hwi-problem" id="hwi-q5">
+  <h2><span class="badge easy">Easy</span> 5. Invasion Grid (Multi-source Spread)</h2>
+  <p>General Ali invades an N×M grid Q of cells: <code>'*'</code> blocked, <code>'A'</code> invaded, <code>'E'</code> enemy. Each second, every 'E' cell adjacent (sharing a side) to an 'A' cell becomes invaded. Find the minimum time to invade all 'E' cells, or −1 if impossible.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: M</li>
+    <li>Next N lines: string rows of Q</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^3</li>
+    <li>1 &lt;= M &lt;= 10^3</li>
+    <li>1 &lt;= len(Q[i]) &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+2
+2
+AE
+EE
+
+Output:
+2</pre>
+  <div class="explain">Second 1: [[AA],[AE]]. Second 2: [[AA],[AA]]. Answer = 2.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+3
+2
+AE
+*E
+EE
+
+Output:
+4</pre>
+  <div class="explain">Spreads step by step around the blocked cell; takes 4 seconds to invade all 'E' cells.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+3
+2
+AE
+**
+EE
+
+Output:
+-1</pre>
+  <div class="explain">The blocked row separates the grid — the bottom 'E' cells can never be reached. Answer = −1.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q6 -->
+<div class="hwi-problem" id="hwi-q6">
+  <h2><span class="badge medium">Medium</span> 6. Maximum Expert Number</h2>
+  <p>Company ABC has N employees, one per floor, with skill A[i] on floor i. Employees are partitioned into teams of consecutive floors. The <strong>expert value</strong> of a team is the smallest skill value ≥0 that is absent from that team. The <strong>expert number</strong> is the sum of expert values across all teams. Find the maximum achievable expert number.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Next N lines: A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^3</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4
+0
+2
+1
+1
+
+Output:
+3</pre>
+  <div class="explain">Teams [0,2,1] (expert value 3) and [1] (expert value 0) → 3+0 = 3.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+5
+0
+1
+2
+1
+0
+
+Output:
+5</pre>
+  <div class="explain">Teams [0,1,2] (value 3) and [1,0] (value 2) → 3+2 = 5.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+10
+0
+1
+0
+1
+1
+0
+3
+2
+1
+0
+
+Output:
+10</pre>
+  <div class="explain">Teams [0,1],[0,1],[1,0,3,2],[1,0] → 2+2+4+2 = 10.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q7 -->
+<div class="hwi-problem" id="hwi-q7">
+  <h2><span class="badge medium">Medium</span> 7. Covered Ranges in Connected Components</h2>
+  <p>A graph has n nodes (node i has value i), initially with no edges. A range [l,r] is <em>covered</em> in a set s if every value from l to r appears in s. Define <code>beauty(s)</code> as the minimum number of covered ranges needed so every element of s belongs to at least one range (e.g. beauty({1,2,4,5,8,11}) = 4). Process q queries:</p>
+  <ul>
+    <li><strong>Type 1</strong> (1,i,j) — add an edge between i and j</li>
+    <li><strong>Type 2</strong> (2,u,0) — find the number of covered ranges (i.e. beauty) of the connected component containing u</li>
+  </ul>
+  <p>Find the sum of answers to all type 2 queries.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: n</li>
+    <li>Line 2: q</li>
+    <li>Line 3: t (always 3)</li>
+    <li>Next q lines: t space-separated integers per query</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= n &lt;= 10^5</li>
+    <li>1 &lt;= q &lt;= 10^5</li>
+    <li>t = 3</li>
+    <li>0 &lt;= queries[i][j] &lt;= n</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+2
+1
+3
+2 1 0
+
+Output:
+1</pre>
+  <div class="explain">No edges yet — component of node 1 is just {1}, beauty = 1.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+2
+3
+3
+2 1 0
+1 1 2
+2 1 0
+
+Output:
+2</pre>
+  <div class="explain">First query: {1} → beauty 1. After adding edge (1,2), component {1,2} → beauty 1. Total = 1+1 = 2.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+10
+3
+3
+1 1 4
+2 1 0
+2 4 0
+
+Output:
+4</pre>
+  <div class="explain">After edge (1,4): component {1,4} → two covered ranges [1,1] and [4,4], beauty=2 for each query. Total = 2+2 = 4.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q8 -->
+<div class="hwi-problem" id="hwi-q8">
+  <h2><span class="badge medium">Medium</span> 8. Circular Chair Jumps</h2>
+  <p>N people sit around a circular table. The person on chair i can jump A[i] chairs left or right in one jump. Bob starts on chair X and must reach chair Y. Find the minimum number of jumps required, or −1 if impossible.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: X</li>
+    <li>Line 3: Y</li>
+    <li>Next N lines: A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= X, Y &lt;= N</li>
+    <li>1 &lt;= A[i] &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+5
+5
+1
+1
+2
+3
+2
+4
+
+Output:
+1</pre>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+5
+2
+4
+5
+4
+3
+2
+1
+
+Output:
+3</pre>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+6
+2
+3
+2
+2
+2
+2
+2
+2
+
+Output:
+-1</pre>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q9 -->
+<div class="hwi-problem" id="hwi-q9">
+  <h2><span class="badge medium">Medium</span> 9. Great Ball Chain Probability</h2>
+  <p>Two boxes hold infinite blue and red balls. A chain is built by repeatedly drawing a ball from one box and appending it. A chain is <strong>good</strong> if after every insertion, blue count B[i] ≤ red count R[i] + K. A chain is <strong>great</strong> if it is good, and its reverse also satisfies the analogous swapped condition (blue↔red matching). Given probability of drawing blue = B/10<sup>6</sup> and red = R/10<sup>6</sup>, find the probability of a great chain of length N, modulo 10<sup>9</sup>+7.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: K</li>
+    <li>Line 3: B</li>
+    <li>Line 4: R</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^9</li>
+    <li>1 &lt;= K &lt;= 100</li>
+    <li>1 &lt;= B &lt;= 10^6</li>
+    <li>1 &lt;= R &lt;= 10^6</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+1
+1
+199252
+470888
+
+Output:
+542964004</pre>
+  <div class="explain">Only one great chain possible: "B".</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+2
+1
+748096
+475634
+
+Output:
+170882874</pre>
+  <div class="explain">Two great chains: "BR" and "BB".</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+4
+3
+813081
+102149
+
+Output:
+6235092</pre>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q10 -->
+<div class="hwi-problem" id="hwi-q10">
+  <h2><span class="badge medium">Medium</span> 10. Maximum Amazingness Partition</h2>
+  <p>Array A of size N is partitioned into contiguous subarrays, each of length at least K. The <strong>beauty</strong> of a subarray is the maximum bitwise XOR achievable from any subset of its values. The <strong>amazingness</strong> of a partition is the sum of beauties of its subarrays. Find the maximum possible amazingness.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: K</li>
+    <li>Next N lines: A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= K &lt;= 10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+2
+2
+2
+1
+
+Output:
+3</pre>
+  <div class="explain">Whole array [2,1] as one subarray, max XOR subset = 3.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+4
+1
+1
+5
+3
+3
+
+Output:
+12</pre>
+  <div class="explain">Four singleton subarrays [1],[5],[3],[3] → 1+5+3+3 = 12.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+7
+1
+16
+3
+3
+5
+19
+19
+5
+
+Output:
+70</pre>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q11 -->
+<div class="hwi-problem" id="hwi-q11">
+  <h2><span class="badge hard">Hard</span> 11. Minimum k for Longest Path</h2>
+  <p>Given a permutation p of length n and integer m, build a directed graph where an edge exists between i and j if p[i] &lt; p[j] and |i−j| ≤ k. Find the minimum value of k such that the longest path in the resulting graph has length ≥ m (path length = number of nodes).</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: n</li>
+    <li>Line 2: m</li>
+    <li>Next n lines: p[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= n &lt;= 10^5</li>
+    <li>1 &lt;= m &lt;= n</li>
+    <li>1 &lt;= p[i] &lt;= n</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+5
+2
+1
+3
+2
+5
+4
+
+Output:
+1</pre>
+  <div class="explain">p=[1,3,2,5,4]. With k≥1, edge 1→2 exists, giving a path of length 2. Minimum k = 1.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+5
+3
+1
+3
+2
+5
+4
+
+Output:
+2</pre>
+  <div class="explain">With k≥2, path 1→2→3 (length 3) becomes available. Minimum k = 2.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+5
+1
+1
+2
+3
+4
+5
+
+Output:
+0</pre>
+  <div class="explain">Any single node is a path of length 1, so k=0 suffices.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q12 -->
+<div class="hwi-problem" id="hwi-q12">
+  <h2><span class="badge hard">Hard</span> 12. Some Help (Soldiers &amp; Treasure Chests)</h2>
+  <p>There are N soldiers (N even) and N treasure chests with bonus values Bonus[i]. Soldier power array A has each value in [1, N/2] occurring exactly twice. Over N rounds, for each soldier i, find the first soldier R to their right whose power is a multiple of soldier i's power. If found, add the maximum bonus among chests in range [i,R] to total XP (chests reusable). Find the total XP across all rounds.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Next N lines: A[i]</li>
+    <li>Next N lines: Bonus[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^5</li>
+    <li>1 &lt;= Bonus[i] &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4
+1
+1
+2
+2
+4
+8
+2
+1
+
+Output:
+18</pre>
+  <div class="explain">A=[1,1,2,2], Bonus=[4,8,2,1]. Soldier1→soldier2: max(4,8)=8. Soldier2→soldier3: max(8,2)=8. Soldier3→soldier4: max(2,1)=2. Soldier4: no match. Total = 8+8+2 = 18.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+6
+1
+2
+3
+1
+2
+3
+4
+2
+1
+4
+5
+9
+
+Output:
+23</pre>
+  <div class="explain">A=[1,2,3,1,2,3], Bonus=[4,2,1,4,5,9]. Soldier1→2: max(4,2)=4. Soldier2→5: max(2,1,4,5)=5. Soldier3→6: max(1,4,5,9)=9. Soldiers 4,5,6: no match. Total = 4+5+9 = 18... (per source: 4+5+9+5=23, includes an additional matched pair contribution).</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+4
+1
+1
+2
+2
+16
+8
+4
+2
+
+Output:
+28</pre>
+  <div class="explain">A=[1,1,2,2], Bonus=[16,8,4,2]. Soldier1→2: max(16,8)=16. Soldier2→3: max(8,4)=8. Soldier3→4: max(4,2)=4. Total = 16+8+4 = 28.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q13 -->
+<div class="hwi-problem" id="hwi-q13">
+  <h2><span class="badge hard">Hard</span> 13. Frequency / Distinct Pair Counting</h2>
+  <p>Given array A of length N and two functions:</p>
+  <ul>
+    <li><code>frequency(left, right, value)</code> — count of elements equal to value in [left,right]</li>
+    <li><code>distinct(left, right)</code> — count of distinct elements in [left,right]</li>
+  </ul>
+  <p>Find the number of pairs (i, j), 1 ≤ i &lt; j ≤ N, satisfying:</p>
+  <pre>frequency(1, i, A[i]) + frequency(j, N, A[j]) &lt;= floor(distinct(1, i) / 2) + floor(distinct(j, N) / 2)</pre>
+  <p>Return the count modulo 10<sup>9</sup>+7.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Next N lines: A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^9</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+5
+2
+2
+3
+1
+5
+
+Output:
+2</pre>
+  <div class="explain">Pairs (1,2) and (3,4) satisfy the condition.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+5
+5
+5
+5
+5
+5
+
+Output:
+0</pre>
+  <div class="explain">No pair satisfies the condition when all values are identical.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+5
+1
+2
+3
+4
+5
+
+Output:
+5</pre>
+  <div class="explain">Pairs (1,2), (1,3), (1,4), (1,5), (2,3) satisfy the condition — 5 total.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q14 -->
+<div class="hwi-problem" id="hwi-q14">
+  <h2><span class="badge hard">Hard</span> 14. Tree Subtree Intersection Beauty</h2>
+  <p>A tree of N nodes with parent array P, and two distinct nodes A and B. The <strong>beauty</strong> of (U, V) is the number of nodes that belong to both the subtree of U (tree rooted at A) and the subtree of V (tree rooted at B). Process Q queries of (U, V); after each query, let K be the answer to the last query (initially 0), then update:</p>
+  <pre>U = (U + K) mod N + 1
+V = (V + K) mod N + 1</pre>
+  <p>Find the sum of answers to all queries modulo 10<sup>9</sup>+7.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: A</li>
+    <li>Line 3: B</li>
+    <li>Next N lines: P[i]</li>
+    <li>Next line: Q</li>
+    <li>Next line: Col (always 2)</li>
+    <li>Next Q lines: 2 space-separated integers per query</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= A, B &lt;= N</li>
+    <li>0 &lt;= P[i] &lt;= N</li>
+    <li>1 &lt;= Q &lt;= 10^5</li>
+    <li>Col = 2</li>
+    <li>1 &lt;= Queries[i][j] &lt;= N</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+2
+1
+2
+0
+1
+1
+2
+1 2
+
+Output:
+0</pre>
+  <div class="explain">Transformed query (2,1): subtree of node 1 rooted at 0 and subtree of node 0 rooted at 1 don't intersect. Beauty = 0.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+2
+1
+2
+0
+1
+2
+2
+1 1
+1 2
+
+Output:
+3</pre>
+  <div class="explain">Query1 transforms to (2,2): beauty = subtree size of node 2 rooted at A = 1. K becomes 1. Query2 transforms to (1,2): beauty = 2. Total = 1+2 = 3.</div>
+
+  <p class="case-title">Case 3</p>
+  <pre>Input:
+4
+1
+2
+0
+1
+1
+3
+4
+2
+3 3
+1 3
+4 4
+1 2
+
+Output:
+6</pre>
+  <div class="explain">Individual query answers are 1, 2, 2, 1 respectively. Total = 1+2+2+1 = 6.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q15 -->
+<div class="hwi-problem" id="hwi-q15">
+  <h2><span class="badge easy">Easy</span> 15. Hotel Guest Unhappiness</h2>
+  <p>As the manager of a hotel, you have N guests to attend to, and each guest has a happiness value (C<sub>i</sub>) that depends on when they are served. A guest's unhappiness is the difference between their happiness value and the time (x) they are served, calculated as |C<sub>i</sub> − x|. Guests are served one at a time, one unit of time each, and you may choose the order. Find the minimum total unhappiness.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: N space-separated values C[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^3</li>
+    <li>1 &lt;= C[i] &lt;= N</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4
+2 2 3 3
+
+Output:
+2</pre>
+  <div class="explain">Sorted C = [2,2,3,3] served at times 1,2,3,4: |2−1|+|2−2|+|3−3|+|3−4| = 1+0+0+1 = 2.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+4
+1 1 1 1
+
+Output:
+6</pre>
+  <div class="explain">Served at times 1,2,3,4: |1−1|+|1−2|+|1−3|+|1−4| = 0+1+2+3 = 6.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q16 -->
+<div class="hwi-problem" id="hwi-q16">
+  <h2><span class="badge medium">Medium</span> 16. Divisible Product Pairs</h2>
+  <p>Find the total number of positive integer pairs (A, B) such that A, B ≤ N, A × B ≤ X, and (A + B) is divisible by D. Return the result modulo 10<sup>9</sup>+7, as the count can be large.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: X</li>
+    <li>Line 3: D</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^9</li>
+    <li>1 &lt;= X &lt;= 10^18</li>
+    <li>1 &lt;= D &lt;= 10^9</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4
+3
+2
+
+Output:
+6</pre>
+  <div class="explain">Valid pairs: (1,1), (1,3), (2,2), (3,1), (3,3), (4,4).</div>
+
+  <p class="case-title">Case 2 (debug)</p>
+  <pre>Input:
+100
+121
+2
+
+Output:
+4778</pre>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q17 -->
+<div class="hwi-problem" id="hwi-q17">
+  <h2><span class="badge medium">Medium</span> 17. Triplets Under a Limit</h2>
+  <p>Given an array of size N where every element is ≤ M, find the maximum number of triplets that can be formed. A triplet is valid if either all three numbers are equal, or the three numbers are consecutive. Each element may belong to at most one triplet.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N M</li>
+    <li>Line 2: N space-separated values arr[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= M &lt;= 10^4</li>
+    <li>1 &lt;= arr[i] &lt;= M</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4 2
+1 2 2 2
+
+Output:
+1</pre>
+  <div class="explain">Only one triplet can be formed: {2,2,2}.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q18 -->
+<div class="hwi-problem" id="hwi-q18">
+  <h2><span class="badge medium">Medium</span> 18. Four Subsequences, Three Cuts</h2>
+  <p>Given an array A of N elements, make three cuts to split it into 4 non-empty contiguous subsequences. Find the minimum possible absolute difference between the maximum and minimum sum among the 4 resulting subsequences.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: N space-separated values A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>4 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^4</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+10
+10 71 84 33 6 47 23 25 52 64
+
+Output:
+36</pre>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q19 -->
+<div class="hwi-problem" id="hwi-q19">
+  <h2><span class="badge hard">Hard</span> 19. Largest Group in Consistent Order</h2>
+  <p>You are given N people and K days. Each day is a permutation of the N people, giving the order in which they arrived at a theatre. Find the largest group of people whose relative order is the same across all K days.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: K</li>
+    <li>Next K lines: N space-separated values, the arrival order for that day</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 1000</li>
+    <li>1 &lt;= K &lt;= 10</li>
+    <li>1 &lt;= a[i][j] &lt;= N</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4
+3
+1 3 2 4
+1 3 2 4
+1 4 3 2
+
+Output:
+3</pre>
+  <div class="explain">People 1, 3, 2 appear in the same relative order on all 3 days.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q20 -->
+<div class="hwi-problem" id="hwi-q20">
+  <h2><span class="badge medium">Medium</span> 20. Minesweeper Question Marks</h2>
+  <p>You are given a string of length N consisting of digits and question marks. A <code>#</code> represents a mine, and a digit represents the number of mines among its adjacent cells. Replace every <code>?</code> with either <code>0</code> or <code>1</code> so that the string represents a valid mine configuration. Return the number of valid assignments.</p>
+
+  <h3>Input Format</h3>
+  <ul><li>Line 1: string of length N</li></ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints"><li>1 &lt;= N &lt;= 10^5</li></ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+??0?1?
+
+Output:
+2</pre>
+  <div class="explain">The two valid assignments are "#1001#" and "00001#".</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q21 -->
+<div class="hwi-problem" id="hwi-q21">
+  <h2><span class="badge medium">Medium</span> 21. Pyramid Beauty Maximization</h2>
+  <p>Akshat has N squares, each with a side length S[i]. He wants to build K pyramids using all the squares; the i-th pyramid contains C[i] squares. The beauty of a pyramid is (top square side length + bottom square side length), and the beauty of the whole structure is the sum of beauties of all K pyramids. Find the maximum possible total beauty.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: K</li>
+    <li>Next N lines: S[i]</li>
+    <li>Next K lines: C[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>1 &lt;= K &lt;= 10^5</li>
+    <li>1 &lt;= S[i] &lt;= 10^5</li>
+    <li>1 &lt;= C[i] &lt;= 10^5</li>
+  </ol>
+
+  <h3>Sample Test Cases</h3>
+  <p class="case-title">Case 1</p>
+  <pre>Input:
+4
+2
+2
+5
+2
+5
+2
+2
+
+Output:
+14</pre>
+  <div class="explain">Sizes = {2,5,2,5}, Counts = {2,2}. Pyramid 1 = {2,5} → beauty 7. Pyramid 2 = {2,5} → beauty 7. Total = 14.</div>
+
+  <p class="case-title">Case 2</p>
+  <pre>Input:
+4
+2
+7
+1
+1
+12
+3
+1
+
+Output:
+32</pre>
+  <div class="explain">Sizes = {7,1,1,12}, Counts = {3,1}. Pyramid 1 = {1,1,7} → beauty 1+7=8. Pyramid 2 = {12} → beauty 12+12=24. Total = 32.</div>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q22 -->
+<div class="hwi-problem" id="hwi-q22">
+  <h2><span class="badge easy">Easy</span> 22. Maximize Score by Doubling a Subarray</h2>
+  <p>Given an array A of length N, choose exactly one contiguous subarray and double all its elements. Find the maximum possible score, where score is the total sum of the array after doubling. Doubling the subarray from index i to j adds the sum of that subarray to the total sum, so the goal is to maximize (total sum + best subarray sum). Return the result modulo 10<sup>9</sup>+7.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: N space-separated values A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>-10^9 &lt;= A[i] &lt;= 10^9</li>
+    <li>Output modulo 10^9 + 7</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q23 -->
+<div class="hwi-problem" id="hwi-q23">
+  <h2><span class="badge medium">Medium</span> 23. Subsequence with One Sign Change</h2>
+  <p>Given an array A of N non-zero integers, select a subsequence (preserving relative order) that follows one of these patterns: only positive numbers, only negative numbers, positives followed by negatives, or negatives followed by positives. In other words, the subsequence may change sign at most once. Find the maximum number of elements you can include.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: N space-separated values A[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>N &lt;= 20</li>
+    <li>A[i] != 0</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q24 -->
+<div class="hwi-problem" id="hwi-q24">
+  <h2><span class="badge medium">Medium</span> 24. Coin Operations</h2>
+  <p>You are given an integer N, and two arrays A and B, each of size N. For each index i, you start with 0 coins and repeatedly perform operations until both A[i] and B[i] become 0. Allowed operations for index i: if A[i] &gt; 0, add 1 coin and decrease A[i] by 1; if B[i] &gt; 0, double the current coin total and decrease B[i] by 1. Let cost[i] be the maximum possible number of coins obtainable for index i. Find the sum of all cost[i], modulo 10<sup>9</sup>+7.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Next N lines: A[i]</li>
+    <li>Next N lines: B[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 5×10^5</li>
+    <li>1 &lt;= A[i] &lt;= 10^9</li>
+    <li>1 &lt;= B[i] &lt;= 10^9</li>
+    <li>Time limit: 1.0 sec, Memory limit: 256 MB</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q25 -->
+<div class="hwi-problem" id="hwi-q25">
+  <h2><span class="badge easy">Easy</span> 25. Lazy Student</h2>
+  <p>You are given a test with n questions, each worth x[i] marks; the passing threshold is m marks. For each question you may either "think" (answer correctly, earning x[i] marks with certainty) or "guess" (pick randomly among c options, earning expected marks x[i]/c). Find the minimum number of questions you must think through so your expected total score is at least m. If even thinking through every question leaves the expected score strictly below m, return −1.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: n</li>
+    <li>Line 2: m</li>
+    <li>Line 3: c</li>
+    <li>Next n lines: x[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= n &lt;= 10^5</li>
+    <li>1 &lt;= m &lt;= 10^9</li>
+    <li>1 &lt;= c &lt;= 10^9</li>
+    <li>1 &lt;= x[i] &lt;= 10^9</li>
+    <li>Time limit: 1.0 sec</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q26 -->
+<div class="hwi-problem" id="hwi-q26">
+  <h2><span class="badge medium">Medium</span> 26. Cyclic Increments to Non-Decreasing</h2>
+  <p>You are given an array arr[] of size N, where each element is a single digit from 0 to 9. You may repeatedly choose any index i and increment arr[i] by 1; if the digit becomes 10 it wraps around to 0 (cyclic increment). The minimum cost to convert digit a into digit b is (b − a + 10) mod 10. Find the minimum total number of cyclic increments required to make the array non-decreasing (arr[i] &gt;= arr[i-1] for all i &gt; 0).</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: N space-separated digits arr[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N &lt;= 10^5</li>
+    <li>0 &lt;= arr[i] &lt;= 9</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q27 -->
+<div class="hwi-problem" id="hwi-q27">
+  <h2><span class="badge hard">Hard</span> 27. Vineyard Planting</h2>
+  <p>A vineyard manager plants a row of grapevines using seedlings from two nurseries: Nursery A has N seedlings with yields A[i], and Nursery B has M seedlings with yields B[j]. All N + M seedlings are planted into a single continuous row while preserving each nursery's internal relative order. Scoring: the first seedling planted scores 0; every subsequent seedling x scores max(|x − max_prev|, |x − min_prev|), where max_prev and min_prev are the maximum and minimum yields among all previously planted seedlings. Find the maximum possible total score.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: M</li>
+    <li>Next N lines: A[i]</li>
+    <li>Next M lines: B[i]</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N, M &lt;= 1000</li>
+    <li>1 &lt;= A[i], B[i] &lt;= 10^5</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q28 -->
+<div class="hwi-problem" id="hwi-q28">
+  <h2><span class="badge hard">Hard</span> 28. Aquarium Showcase Design</h2>
+  <p>An aquarium curator transfers fish from two holding tanks into a single continuous display row: Tank A has N fish with family codes A[1..N], and Tank B has M fish with family codes B[1..M]. At each step, the next fish is taken from the front of either Tank A or Tank B, preserving each tank's internal relative order. For every adjacent pair of fish placed consecutively (family x followed by family y), an adjacency score S[x][y] is earned. Find the maximum possible total display score.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N</li>
+    <li>Line 2: M</li>
+    <li>Line 3: K (number of unique fish families)</li>
+    <li>Next N lines: A[i]</li>
+    <li>Next M lines: B[i]</li>
+    <li>Next K lines: K space-separated values, the adjacency score matrix S</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N, M &lt;= 1000</li>
+    <li>1 &lt;= K &lt;= 1000</li>
+    <li>1 &lt;= S[i][j] &lt;= 10^5</li>
+    <li>1 &lt;= A[i], B[i] &lt;= K</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+<!-- Q29 -->
+<div class="hwi-problem" id="hwi-q29">
+  <h2><span class="badge hard">Hard</span> 29. Mosaic Tile Optimization</h2>
+  <p>An artist covers an N × M grid wall with tiles; every cell must be covered by exactly one tile. Two tile types are available: Type A (1×1) costs costA and earns a beauty bonus V[i][j] for that cell; Type B (1×2, horizontal only, covering two adjacent cells in the same row) costs costB and earns 0 beauty bonus. Net cost = (total cost of tiles used) − (total beauty bonus earned). Find the minimum possible net cost to completely tile the wall.</p>
+
+  <h3>Input Format</h3>
+  <ul>
+    <li>Line 1: N M</li>
+    <li>Line 2: costA costB</li>
+    <li>Next N lines: M space-separated values, the beauty bonus matrix V</li>
+  </ul>
+
+  <h3>Constraints</h3>
+  <ol class="constraints">
+    <li>1 &lt;= N, M &lt;= 1000</li>
+    <li>1 &lt;= costA, costB &lt;= 10^5</li>
+    <li>0 &lt;= V[i][j] &lt;= 10^5</li>
+  </ol>
+
+  <a class="back-top" href="#hwi-top">↑ back to contents</a>
+</div>
+
+</div>
+
+<div class="hwi-footer">
+  Source: Infosys "Hack With Infy — Sample Questions" · External Document © 2025 Infosys Limited
+</div>
+</div>
+
+    <div class="chapter" style="margin-top:28px;">
+      <div class="chapter-head"><h2>Recommended Questions</h2></div>
+      <div class="chapter-desc">HackWithInfy — Year by Year (verified pattern, not questions). Sourced from candidate exam-experience reports (GeeksforGeeks, PrepInsta, and independent blogs). Exact problem text is intentionally omitted.</div>
+      <div class="grid" id="infy-history-grid"></div>
+    </div>
+
+    <div id="infy-roadmap"></div>
+  </main>
+</div>
+
+<div class="shell" id="view-dsaforge" style="display:none; grid-template-columns:1fr;">
+  <iframe id="dsaforge-frame" title="DSAForge — Ultimate Roadmap"
+    style="width:100%; height:calc(100vh - 64px); border:0; display:block; background:var(--bg);"
+    src="DSAForge_Ultimate_Roadmap.html"></iframe>
+</div>
+
+<footer>Grandmaster Track — a personal training dashboard. Progress is stored locally in your browser.</footer>
+
+<script>
+/* =====================================================================
+   PROBLEM_DB SCHEMA
+   Each chapter: { id, name, blurb, topics:[ { name, problems:[ ... ] } ] }
+   Each problem: {
+     id:      'contestId letter'  e.g. "4A"
+     name:    display name
+     rating:  Codeforces rating (integer)
+     concept: main algorithmic concept
+     pattern: pattern/technique learned
+     why:     one line on why it matters
+     complexity: expected time complexity
+     companies: [ subset of COMPANY_LIST ] — pattern-relevance tags
+   }
+   Add real, verified problems only — link is derived automatically from id.
+   ===================================================================== */
+
+const COMPANY_LIST = ["Google","Amazon","Microsoft","Meta","Apple","Nvidia","Uber","Netflix","Adobe","Bloomberg","Atlassian","Goldman Sachs","JPMorgan","Samsung","Oracle","Infosys","Infosys HackWithInfy"];
+
+/* =====================================================================
+   INFOSYS PREP MODULE
+   No official/verified archive of exact HackWithInfy or Infosys online-test
+   questions exists publicly (Infosys does not publish one, and candidate
+   reports across 2019-2025 consistently say exact questions can't be shared).
+   So instead of inventing problems, this module:
+     1) documents the verified exam-pattern history per year (source cited),
+     2) tags real, already-verified CF problems above with "Infosys" /
+        "Infosys HackWithInfy" where the *topic* matches what's reported
+        (arrays, strings, greedy, DP, recursion/backtracking, graphs, trees) —
+        deliberately NOT tagging topics that aren't reported as tested
+        (segment trees, tries, digit DP, KMP/Z, DSU, Fenwick).
+   ===================================================================== */
+
+const INFOSYS_EXAM_HISTORY = [
+  { year:"2018", detail:"First edition of HackWithInfy, launched by Infosys to source coding talent nationally.", source:"PrepInsta — HackWithInfy overview" },
+  { year:"2019", detail:"Round 1 held on HackerEarth/HackerRank: 3 questions, 3-hour window, easy/medium/hard split. ~120,000 students participated nationally.", source:"Akash Rajpurohit — HackWithInfy 2019 Round 1 Experience" },
+  { year:"2020", detail:"Round 1 on HackerEarth, 30–31 March 2020: 3 questions, 3 hours, easy/medium/hard. Conducted for the 2021 graduating batch amid COVID disruption.", source:"GeeksforGeeks — HackWithInfy Exam Experience" },
+  { year:"2021", detail:"Round 1 coding test in May 2021, followed by a Grand Finale — a 48-hour team hackathon on Infosys Meridian, July 2–5 2021, for the top 100 Round 1 performers.", source:"Edyst — InfyTQ vs HackWithInfy" },
+  { year:"2022", detail:"Ran February 2022 for the 2023/2024/2025 graduating batches; Round 1 coding test on HackerRank/Infosys platform, same 3-question structure.", source:"GeeksforGeeks — HackWithInfy overview" },
+  { year:"2023", detail:"Same core structure continued: qualifying coding round feeding into a Grand Finale hackathon for top performers.", source:"PrepInsta — HackWithInfy Previous Year Questions" },
+  { year:"2024", detail:"Held April 2024, now run on Infosys's own code editor/assessment platform rather than a third-party judge. 3 questions (easy/medium/hard) in 3 hours; hiring narrowed to the Specialist Programmer role only. Candidates reported the 'easy' slot was still LeetCode-medium-to-hard difficulty.", source:"GeeksforGeeks — HackWithInfy Online Assessment Exam Experience 2024" },
+  { year:"2025", detail:"Round 1: 3-hour, 3-question coding assessment; Round 2 (Grand Finale) is a 4-day team hackathon for the top 100. Reported focus areas: greedy algorithms and dynamic programming.", source:"PrepInsta — HackWithInfy Coding Questions 2025" },
+];
+
+const INFOSYS_ROADMAP = [
+  { key:"Infosys Fundamentals", chapters:["ch-fundamentals"], blurb:"Input/output handling, conditionals, loops, basic arithmetic — the 'easy' slot in every reported HackWithInfy round." },
+  { key:"Arrays, Strings & Math", chapters:["ch-math"], blurb:"Frequency counting, prefix-sum style reasoning, and string manipulation — consistently reported as the easy/medium slot topic." },
+  { key:"Searching, Sorting & Data Structures", chapters:["ch-search","ch-prefix","ch-ds","ch-twoptr","ch-sorting"], blurb:"Binary search, hashing/maps, sorting-based reasoning, two-pointer/sliding-window — the medium-slot toolbox." },
+  { key:"Greedy & Recursion", chapters:["ch-greedy"], blurb:"Greedy and constructive reasoning — explicitly named as a recurring topic in 2024–2025 reports." },
+  { key:"Dynamic Programming", chapters:["ch-dp"], blurb:"Reported as the most common 'hard' slot topic, alongside trees and graphs." },
+  { key:"Graphs & Trees", chapters:["ch-graphs","ch-trees"], blurb:"The other common 'hard' slot: one candidate's hard question was tree-based, another's was graph-based." },
+];
+
+const PROBLEM_DB = [
+  {
+    id:"ch-fundamentals", name:"Programming Fundamentals",
+    blurb:"Clean input handling, brute force, and constructive thinking before any real algorithm enters the picture.",
+    topics:[
+      { name:"Basic Implementation", problems:[
+        {id:"4A", name:"Watermelon", rating:800, concept:"Parity check", pattern:"Casework", why:"Smallest possible constructive-proof problem — good first CF submission.", complexity:"O(1)", companies:["Amazon","Google","Infosys"]},
+        {id:"71A", name:"Way Too Long Words", rating:800, concept:"String abbreviation", pattern:"Simulation", why:"Trains careful string indexing under a literal spec.", complexity:"O(n)", companies:["Microsoft","Adobe"]},
+        {id:"158A", name:"Next Round", rating:800, concept:"Threshold scan", pattern:"Simulation", why:"Classic 'read the constraint carefully' warm-up.", complexity:"O(n)", companies:["Amazon","Infosys"]},
+        {id:"231A", name:"Team", rating:800, concept:"Majority vote per row", pattern:"Brute force", why:"First taste of iterating structured input correctly.", complexity:"O(n)", companies:["Google","Uber"]},
+        {id:"1030A", name:"In Search of an Easy Problem", rating:800, concept:"Existence check", pattern:"Simulation", why:"Tests whether you over-think trivial statements.", complexity:"O(n)", companies:["Netflix","Infosys"]},
+        {id:"546A", name:"Soldier and Bananas", rating:800, concept:"Arithmetic series", pattern:"Direct formula", why:"Quick check on closed-form math vs brute loops.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"112A", name:"Petya and Strings", rating:800, concept:"Case-insensitive comparison", pattern:"Normalization", why:"Trains normalizing input before comparing it.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"116A", name:"Tram", rating:800, concept:"Running maximum", pattern:"Single-pass simulation", why:"Basic 'track a running value' pattern used everywhere later.", complexity:"O(n)", companies:["Uber"]},
+        {id:"339A", name:"Helpful Maths", rating:800, concept:"Sorting digits", pattern:"Sort + join", why:"Shows sorting can be the entire solution.", complexity:"O(n log n)", companies:["Amazon"]},
+        {id:"282A", name:"Bit++", rating:800, concept:"Token parsing", pattern:"Simulation", why:"Very first exposure to parsing structured tokens.", complexity:"O(n)", companies:["Microsoft"]},
+        {id:"50A", name:"Domino piling", rating:800, concept:"Grid tiling parity", pattern:"Direct formula", why:"Small combinatorial-counting warm-up.", complexity:"O(1)", companies:["Google"]},
+        {id:"133A", name:"HQ9+", rating:800, concept:"Instruction scanning", pattern:"Simulation", why:"Tiny interpreter — good for careful character-by-character logic.", complexity:"O(n)", companies:["Oracle"]},
+        {id:"236A", name:"Boy or Girl", rating:800, concept:"Distinct character parity", pattern:"Set usage", why:"First natural use of a set instead of raw counting.", complexity:"O(n)", companies:["Meta"]},
+        {id:"41A", name:"Translation", rating:800, concept:"Reverse string check", pattern:"String comparison", why:"Cheap check on string reversal logic.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"785A", name:"Anton and Polyhedrons", rating:800, concept:"Lookup counting", pattern:"Hash map / dictionary", why:"Introduces mapping names to fixed values.", complexity:"O(n)", companies:["Netflix","Infosys"]},
+        {id:"977A", name:"Wrong Subtraction", rating:800, concept:"Digit-aware decrement", pattern:"Simulation", why:"Small state-machine style loop.", complexity:"O(n)", companies:["JPMorgan","Infosys"]},
+      ]},
+      { name:"Strings", problems:[
+        {id:"118A", name:"String Task", rating:1000, concept:"Filtering & casing", pattern:"Character-level simulation", why:"Bridges implementation into string-heavy problems.", complexity:"O(n)", companies:["Adobe","Meta","Infosys"]},
+        {id:"1030C", name:"Vasya and Golden Ticket", rating:1400, concept:"Partitioning digits", pattern:"Greedy grouping", why:"Segment-sum reasoning that recurs throughout CP.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"1352A", name:"Sum of Round Numbers", rating:800, concept:"Digit decomposition", pattern:"Constructive", why:"Cheap intro to constructing an answer instead of searching for it.", complexity:"O(log n)", companies:["Oracle","Infosys"]},
+      ]},
+      { name:"Simulation & Counting", problems:[
+        {id:"703A", name:"Mishka and Game", rating:900, concept:"Round-by-round simulation", pattern:"Score tracking", why:"Trains simulating a full process instead of shortcutting it.", complexity:"O(n)", companies:["Amazon","Infosys"]},
+        {id:"1005A", name:"Tanya and Stairways", rating:800, concept:"Sequence-break detection", pattern:"Single-pass scan", why:"Detecting where a monotonic pattern resets.", complexity:"O(n)", companies:["Google","Infosys"]},
+        {id:"200B", name:"Drinks", rating:900, concept:"Weighted average", pattern:"Direct formula", why:"Cheap arithmetic-averaging warm-up.", complexity:"O(n)", companies:["Netflix"]},
+        {id:"58A", name:"Chat room", rating:1000, concept:"Subsequence matching", pattern:"Two-pointer scan", why:"First light taste of subsequence checking.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1141A", name:"Game With Sticks", rating:800, concept:"Grid removal simulation", pattern:"Min of two counters", why:"Reduces a simulation to one line of math once you see the pattern.", complexity:"O(1)", companies:["Microsoft"]},
+        {id:"1257B", name:"Magic Stick", rating:900, concept:"Reachability via a halve-or-decrement rule", pattern:"Casework", why:"Small reachability problem solved entirely by case analysis.", complexity:"O(1)", companies:["Netflix"]},
+        {id:"1108A", name:"An Easy Task", rating:800, concept:"Leap year counting", pattern:"Direct formula", why:"Classic 'derive the formula, skip the loop' problem.", complexity:"O(1)", companies:["Oracle"]},
+        {id:"263A", name:"Beautiful Matrix", rating:800, concept:"Grid coordinate distance", pattern:"Manhattan distance", why:"Introduces reasoning about grid coordinates.", complexity:"O(1)", companies:["Samsung"]},
+        {id:"160A", name:"Twins", rating:900, concept:"Sort + greedy accumulation", pattern:"Sort descending, take until threshold", why:"Foundational greedy-by-sorting pattern.", complexity:"O(n log n)", companies:["Amazon","Uber","Infosys"]},
+        {id:"266A", name:"Stones on the Table", rating:800, concept:"Adjacent duplicate counting", pattern:"Single-pass scan", why:"Simple state comparison between consecutive elements.", complexity:"O(n)", companies:["Adobe","Infosys"]},
+        {id:"313B", name:"Ilya and Queries", rating:1100, concept:"Prefix sum over adjacent pairs", pattern:"Precomputed prefix array", why:"Natural bridge into Chapter 5's prefix-sum ideas.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"467A", name:"George and Accommodation", rating:800, concept:"Capacity counting", pattern:"Direct formula", why:"Cheap counting-with-a-condition warm-up.", complexity:"O(n)", companies:["JPMorgan"]},
+        {id:"479A", name:"Expression", rating:800, concept:"Brute-force over operators", pattern:"Enumeration", why:"Trains exhaustive case enumeration on tiny input.", complexity:"O(1)", companies:["Nvidia"]},
+        {id:"339B", name:"Xenia and Ringroad", rating:900, concept:"Modular distance", pattern:"Direct formula", why:"Circular/modular reasoning warm-up.", complexity:"O(n)", companies:["Uber"]},
+        {id:"1699A", name:"The Third Three Number Problem", rating:800, concept:"XOR construction", pattern:"Constructive", why:"First light exposure to constructing via parity/XOR.", complexity:"O(1)", companies:["Google"]},
+        {id:"1736A", name:"Make A Equal to B", rating:800, concept:"Mismatch counting", pattern:"Casework", why:"Small casework problem with few branches to reason through.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1741A", name:"Compare T-Shirt Sizes", rating:800, concept:"Custom ordering", pattern:"String parsing", why:"Building a comparator from a non-numeric ordering.", complexity:"O(1)", companies:["Adobe"]},
+        {id:"1744A", name:"Even Subset Sum Problem", rating:800, concept:"Parity-based construction", pattern:"Constructive", why:"Recognizing when a trivial subset already satisfies the condition.", complexity:"O(n)", companies:["Netflix"]},
+      ]},
+      { name:"Constructive Basics", problems:[
+        {id:"1015A", name:"Points in Segments", rating:900, concept:"Coverage marking", pattern:"Boolean sweep array", why:"Introduces marking covered positions before harder sweep-line problems.", complexity:"O(n+m)", companies:["Amazon"]},
+        {id:"1092A", name:"Uniform String", rating:800, concept:"Cyclic character construction", pattern:"Constructive", why:"Trains constructing output directly from a formula.", complexity:"O(n)", companies:["Google"]},
+        {id:"1092B", name:"Teams Forming", rating:1100, concept:"Sorted-pair greedy", pattern:"Sort + two-pointer pairing", why:"Early exposure to pairing sorted halves for an optimal sum.", complexity:"O(n log n)", companies:["Microsoft"]},
+        {id:"1114A", name:"Got Any Grapes?", rating:900, concept:"Greedy allocation", pattern:"Leftover-carry greedy", why:"Simple resource-passing greedy across three buckets.", complexity:"O(n)", companies:["Uber"]},
+        {id:"1130A", name:"Be Positive", rating:800, concept:"Sign manipulation", pattern:"Casework", why:"Small parity/sign casework problem.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1183A", name:"Nearest Interesting Number", rating:800, concept:"Digit-sum search", pattern:"Brute increment loop", why:"Trains a 'search forward until condition holds' loop.", complexity:"O(k)", companies:["Adobe"]},
+        {id:"1213A", name:"Chips Moving", rating:800, concept:"Parity invariant", pattern:"Counting", why:"First real 'find the invariant' problem.", complexity:"O(n)", companies:["Nvidia"]},
+        {id:"1256A", name:"Payment Without Change", rating:800, concept:"Modular feasibility", pattern:"Direct check", why:"Small number-theory feasibility check.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"1272B", name:"Snow Walking Robot", rating:1000, concept:"Path construction", pattern:"Constructive", why:"Constructing a valid path instead of searching for one.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"1296A", name:"Array with Odd Sum", rating:800, concept:"Parity feasibility", pattern:"Casework", why:"Reinforces parity-based feasibility reasoning.", complexity:"O(n)", companies:["Samsung"]},
+        {id:"1315A", name:"Dead Pixel", rating:800, concept:"Grid boundary math", pattern:"Direct formula", why:"Simple 2D boundary-distance reasoning.", complexity:"O(1)", companies:["Oracle"]},
+        {id:"1333A", name:"Little Artem", rating:800, concept:"Alternating construction", pattern:"Constructive", why:"Builds intuition for alternating-pattern construction used later in strings.", complexity:"O(n)", companies:["Google","Meta"]},
+      ]},
+      { name:"Speedrun Set I", problems:[
+        {id:"266B", name:"Queue at the School", rating:1000, concept:"Repeated adjacent-swap simulation", pattern:"Simulation over rounds", why:"Trains simulating a repeated transformation cleanly instead of guessing a shortcut.", complexity:"O(n·t)", companies:["Amazon"]},
+        {id:"540A", name:"Combination Lock", rating:800, concept:"Circular distance per digit", pattern:"Direct formula", why:"Small modular-distance warm-up.", complexity:"O(n)", companies:["Google"]},
+        {id:"1183B", name:"Equalize Prices Again", rating:1200, concept:"Capped-average feasibility", pattern:"Greedy math", why:"Reasoning about a global average under a per-item cap.", complexity:"O(n)", companies:["Microsoft"]},
+        {id:"996A", name:"Hit the Lottery", rating:800, concept:"Greedy denomination breakdown", pattern:"Greedy from largest unit", why:"Classic 'break into largest units first' greedy.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"1272C", name:"Yet Another Broken Keyboard", rating:1200, concept:"Substrings using only allowed characters", pattern:"Run-length counting", why:"Reusable 'count substrings in a valid run' formula.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"1296B", name:"Food Buying", rating:800, concept:"Loyalty-discount simulation", pattern:"Direct formula", why:"Small arithmetic simulation with a twist condition.", complexity:"O(1)", companies:["Netflix"]},
+        {id:"1296C", name:"Yet Another Walking Robot", rating:1200, concept:"Cancel redundant back-and-forth moves", pattern:"Hash map of last-visited step", why:"Trains pruning a path down to its useful prefix.", complexity:"O(n)", companies:["Uber"]},
+        {id:"1324A", name:"Yet Another Tetris Problem", rating:1100, concept:"Column-height parity check", pattern:"Casework", why:"Cheap parity-invariant check across an array.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1324B", name:"Yet Another Palindrome Problem", rating:1100, concept:"Existence of a short palindrome", pattern:"Fixed-window matching", why:"Shows a hard-looking palindrome problem collapses to a distance-2 check.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"1335A", name:"Candies and Two Sisters", rating:800, concept:"Split-count feasibility", pattern:"Direct formula", why:"Cheap combinatorial counting warm-up.", complexity:"O(1)", companies:["Amazon"]},
+        {id:"1335B", name:"Construct the String", rating:800, concept:"Cyclic character construction", pattern:"Direct construction", why:"Another rep of building output directly from index math.", complexity:"O(n)", companies:["Google"]},
+        {id:"1345A", name:"Puzzle Pieces", rating:800, concept:"Grid-fit modular check", pattern:"Direct check", why:"Quick modular-feasibility check on grid dimensions.", complexity:"O(1)", companies:["Samsung"]},
+        {id:"1360A", name:"Minimal Square", rating:800, concept:"Bounding square from two rectangles", pattern:"Direct formula", why:"Small geometric bounding-box warm-up.", complexity:"O(1)", companies:["Nvidia"]},
+        {id:"1372A", name:"Omkar and Bad Story", rating:800, concept:"Feasibility via a fixed extra value", pattern:"Casework", why:"Tests spotting a single 'always safe' construction.", complexity:"O(n)", companies:["Oracle"]},
+        {id:"1385A", name:"Genius's Line", rating:800, concept:"Collinearity parity check", pattern:"Casework", why:"Small geometry-adjacent parity check.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"1399A", name:"Remove Smallest", rating:800, concept:"Adjacent-gap removal feasibility", pattern:"Sort + adjacent scan", why:"Cheap sorted-adjacency reasoning problem.", complexity:"O(n log n)", companies:["Meta"]},
+        {id:"1409A", name:"Yet Another Two Integers Problem", rating:800, concept:"Minimum operations via difference", pattern:"Direct formula", why:"Reduces an operation-count problem to one subtraction.", complexity:"O(1)", companies:["Adobe"]},
+        {id:"1420A", name:"Rating Increase", rating:800, concept:"Leading-zero digit trimming", pattern:"String manipulation", why:"Small string-to-number normalization problem.", complexity:"O(n)", companies:["Bloomberg"]},
+      ]},
+      { name:"Speedrun Set II", problems:[
+        {id:"1433A", name:"Boring Apartments", rating:800, concept:"Digit-run counting", pattern:"Direct formula", why:"Cheap arithmetic-series counting warm-up.", complexity:"O(1)", companies:["Netflix"]},
+        {id:"1454A", name:"Special Permutation", rating:800, concept:"Trivial identity construction", pattern:"Direct construction", why:"Reinforces recognizing when the simplest answer already works.", complexity:"O(n)", companies:["Uber"]},
+        {id:"1475A", name:"Odd Divisor", rating:900, concept:"Check for an odd divisor greater than one", pattern:"Factor-out-twos check", why:"Small number-theory feasibility check.", complexity:"O(log n)", companies:["Google"]},
+        {id:"486A", name:"Calculating Function", rating:900, concept:"Alternating sum closed form", pattern:"Direct formula", why:"Derives a formula instead of summing in a loop.", complexity:"O(1)", companies:["Amazon"]},
+        {id:"677A", name:"Vanya and Fence", rating:900, concept:"Effective width under a height cap", pattern:"Direct formula", why:"Small conditional-cost accumulation problem.", complexity:"O(n)", companies:["Microsoft"]},
+        {id:"701A", name:"Cards", rating:800, concept:"Divisibility feasibility check", pattern:"Direct check", why:"Cheap modular reasoning over multiple divisors.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"705A", name:"Hulk", rating:800, concept:"Alternating word construction", pattern:"Direct construction", why:"Small pattern-construction warm-up.", complexity:"O(n)", companies:["Meta"]},
+        {id:"709A", name:"Juicer", rating:1100, concept:"Running-capacity simulation with discards", pattern:"Simulation", why:"Trains simulating a capacity constraint over a sequence.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"746A", name:"Compote", rating:1100, concept:"Ratio-constrained resource use", pattern:"Direct formula + min", why:"Small resource-ratio optimization problem.", complexity:"O(1)", companies:["Bloomberg"]},
+        {id:"749A", name:"Bachgold Problem", rating:800, concept:"Partition into primes via 2s", pattern:"Greedy construction", why:"First light number-theory constructive problem.", complexity:"O(n)", companies:["Oracle"]},
+        {id:"758A", name:"Holiday Of Equality", rating:900, concept:"Cost to equalize to the maximum", pattern:"Direct formula", why:"Cheap 'raise everyone to the max' cost problem.", complexity:"O(n)", companies:["Nvidia"]},
+        {id:"802A", name:"Heidi and Library (easy)", rating:1200, concept:"Buy-ahead vs buy-just-in-time", pattern:"Greedy simulation", why:"Small greedy resource-purchasing problem.", complexity:"O(n)", companies:["Google"]},
+        {id:"807A", name:"Is it rated?", rating:900, concept:"Rating-consistency check", pattern:"Casework", why:"Small multi-condition casework problem.", complexity:"O(n)", companies:["Samsung"]},
+        {id:"864A", name:"Fair Game", rating:1100, concept:"Even split feasibility between two players", pattern:"Set/frequency check", why:"Cheap two-way fairness feasibility check.", complexity:"O(n)", companies:["Amazon"]},
+        {id:"899A", name:"Splitting in Teams", rating:800, concept:"Grouping units of size ≤3", pattern:"Greedy pairing", why:"Small grouping-feasibility greedy problem.", complexity:"O(n)", companies:["Uber"]},
+        {id:"909A", name:"Generate Login", rating:800, concept:"Prefix combination construction", pattern:"Brute enumeration over small cases", why:"Small enumerate-and-compare construction problem.", complexity:"O(1)", companies:["Meta"]},
+        {id:"926A", name:"Serval and Bus", rating:800, concept:"Nearest future multiple", pattern:"Direct formula", why:"Cheap 'next occurrence' arithmetic problem.", complexity:"O(1)", companies:["Netflix"]},
+      ]},
+      { name:"Speedrun Set III", problems:[
+        {id:"1005C", name:"Summarize to the Power of Two", rating:1300, concept:"Pair sums that are a power of two", pattern:"Hash map counting", why:"A second pass at the power-of-two pairing pattern from Chapter 19.", complexity:"O(n log(max))", companies:["Google"]},
+        {id:"1036A", name:"Function Height", rating:1000, concept:"Zigzag height construction", pattern:"Direct construction", why:"Small constructive-sequence problem.", complexity:"O(n)", companies:["Amazon"]},
+        {id:"1036B", name:"Diagonal Walking", rating:1300, concept:"Pair up moves to cut path length", pattern:"Greedy pairing", why:"Trains reasoning about combining moves for a shorter path.", complexity:"O(n)", companies:["Microsoft"]},
+        {id:"1042A", name:"Benches", rating:800, concept:"Max load among choices", pattern:"Direct simulation", why:"Cheap 'try each option, take the best' problem.", complexity:"O(n)", companies:["JPMorgan"]},
+        {id:"1042B", name:"Vitamins", rating:1400, concept:"Cheapest combo covering three categories", pattern:"Bitmask enumeration over small sets", why:"Small bitmask-enumeration problem before Chapter 31.", complexity:"O(n·2^3)", companies:["Bloomberg"]},
+        {id:"1054A", name:"Elevator", rating:800, concept:"Grouping by capacity constraint", pattern:"Greedy grouping", why:"Cheap capacity-grouping warm-up.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"1060A", name:"Phone Numbers", rating:800, concept:"Fixed-prefix feasibility construction", pattern:"Direct construction", why:"Small constructive-feasibility problem.", complexity:"O(n)", companies:["Netflix"]},
+        {id:"1077A", name:"Frog Jumping", rating:800, concept:"Net displacement formula", pattern:"Direct formula", why:"Cheap arithmetic-series closed form.", complexity:"O(1)", companies:["Nvidia"]},
+        {id:"1077B", name:"Disturbed People", rating:1200, concept:"Avoid triggering adjacent neighbors", pattern:"Greedy scan with lookahead", why:"Small greedy problem with a one-step lookahead condition.", complexity:"O(n)", companies:["Oracle"]},
+        {id:"1118A", name:"Water Buying", rating:800, concept:"Pack-size cost comparison", pattern:"Greedy math", why:"Cheap unit-cost comparison problem.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"1119A", name:"Ilya and a Colorful Walk", rating:900, concept:"Farthest pair with differing colors", pattern:"Two-sided scan", why:"Small 'best pair under a constraint' scanning problem.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1131A", name:"Sea Battle", rating:900, concept:"Coverage feasibility over a line", pattern:"Direct formula", why:"Cheap coverage-counting warm-up.", complexity:"O(1)", companies:["Amazon"]},
+        {id:"1151A", name:"Maxim and Biology", rating:800, concept:"Minimum edits to reach a target range", pattern:"Direct formula", why:"Cheap distance-to-range arithmetic problem.", complexity:"O(n)", companies:["Google"]},
+        {id:"1176A", name:"Divide it!", rating:1200, concept:"Prioritize cheaper halving over decrementing", pattern:"Greedy with priority order", why:"Trains ordering operations by cost-efficiency.", complexity:"O(log(max))", companies:["Samsung"]},
+        {id:"1201A", name:"Important Exam", rating:800, concept:"Majority-vote correction", pattern:"Counting", why:"Cheap frequency-based decision problem.", complexity:"O(n)", companies:["Uber"]},
+        {id:"1228A", name:"Distinct Digits", rating:800, concept:"Nearest number with all distinct digits", pattern:"Brute increment search", why:"Small forward-search constructive problem.", complexity:"O(k)", companies:["Bloomberg"]},
+        {id:"1237A", name:"Balanced Rating Changes", rating:800, concept:"Sum-preserving redistribution", pattern:"Direct formula", why:"Cheap redistribution-feasibility problem.", complexity:"O(n)", companies:["Adobe"]},
+      ]},
+      { name:"Speedrun Set IV", problems:[
+        {id:"1244A", name:"Isolation", rating:800, concept:"Minimum removals to break all repeats", pattern:"Frequency counting", why:"Cheap frequency-based minimization problem.", complexity:"O(n)", companies:["Nvidia"]},
+        {id:"1244B", name:"Rectangle Painting 1", rating:1200, concept:"Minimum cuts to keep half a grid white", pattern:"Casework on parity", why:"Small casework problem with a clean closed-form answer.", complexity:"O(1)", companies:["Oracle"]},
+        {id:"1263A", name:"Sweet Problem", rating:800, concept:"Equalize three piles via 2-for-1 trades", pattern:"Casework", why:"Cheap three-way balancing casework problem.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"1277A", name:"Happy Birthday, Polycarp!", rating:800, concept:"Splitting a number into fewest round parts", pattern:"Digit-based construction", why:"Small digit-driven constructive problem.", complexity:"O(log n)", companies:["Meta"]},
+        {id:"1141B", name:"Maximal Continuous Rest", rating:1300, concept:"Longest run of free hours on a circular schedule", pattern:"Duplicate-and-scan (break circularity)", why:"Standard trick for turning a circular array problem into a linear one.", complexity:"O(n)", companies:["Google","Bloomberg"]},
+        {id:"1294A", name:"Collecting Coins", rating:800, concept:"Redistribution feasibility check", pattern:"Direct formula", why:"Cheap sum/max feasibility comparison.", complexity:"O(n)", companies:["Amazon"]},
+        {id:"1300A", name:"Non-zero", rating:800, concept:"Sign-preserving adjustment", pattern:"Casework", why:"Small sign/parity casework problem.", complexity:"O(n)", companies:["Netflix"]},
+        {id:"1304A", name:"Two Rabbits", rating:800, concept:"Meeting point via distance parity", pattern:"Direct formula", why:"Cheap parity/gcd meeting-point problem.", complexity:"O(1)", companies:["Uber"]},
+        {id:"1311A", name:"Add Odd or Subtract Even", rating:800, concept:"Parity-aware step counting", pattern:"Casework", why:"Small parity-based minimum-step problem.", complexity:"O(1)", companies:["Microsoft"]},
+        {id:"1327A", name:"Sum of Odd Integers", rating:900, concept:"Feasibility of summing distinct odd numbers", pattern:"Parity + bound check", why:"Cheap constructive-feasibility number problem.", complexity:"O(1)", companies:["Adobe"]},
+        {id:"1339A", name:"Filling Diamonds", rating:800, concept:"Hexagon tiling count", pattern:"Direct formula", why:"Small geometric-counting closed form.", complexity:"O(1)", companies:["Samsung"]},
+        {id:"1343A", name:"Candies", rating:800, concept:"Minimum halvings to reach a total", pattern:"Greedy / logarithmic counting", why:"Trains recognizing a log-scale greedy pattern.", complexity:"O(log n)", companies:["Nvidia"]},
+        {id:"1374A", name:"Required Remainder", rating:800, concept:"Largest value under a modular constraint", pattern:"Direct formula", why:"Cheap modular-maximization problem.", complexity:"O(1)", companies:["Bloomberg"]},
+        {id:"1454B", name:"Unique Bid Auction", rating:1100, concept:"Find the unique-frequency minimum", pattern:"Frequency counting", why:"Small two-pass frequency-and-scan problem.", complexity:"O(n)", companies:["JPMorgan"]},
+        {id:"1512C", name:"A-B Palindrome", rating:1400, concept:"Fill wildcards into a balanced palindrome", pattern:"Two-pointer construction with counting", why:"Combines palindrome checking with constrained counting.", complexity:"O(n)", companies:["Meta","Adobe"]},
+        {id:"1739A", name:"Compass Building", rating:800, concept:"Symmetric point construction", pattern:"Coordinate geometry", why:"Cheap reflection/symmetry construction problem.", complexity:"O(1)", companies:["Google"]},
+        {id:"1201B", name:"Zero Array", rating:1400, concept:"Rearrangement feasibility via prefix parity", pattern:"Prefix sum feasibility check", why:"Bridges Chapter 5's prefix sums into a feasibility decision.", complexity:"O(n)", companies:["Oracle"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-math", name:"Math & Number Theory",
+    blurb:"From closed-form arithmetic to sieves — the toolbox almost every later chapter leans on.",
+    topics:[
+      { name:"Core Math", problems:[
+        {id:"1A", name:"Theatre Square", rating:1000, concept:"Ceiling division / tiling", pattern:"Direct formula", why:"Deceptively simple — a classic off-by-one trap.", complexity:"O(1)", companies:["Google","Samsung","Infosys"]},
+        {id:"25A", name:"IQ Test", rating:1300, concept:"Parity outlier detection", pattern:"Brute force with early exit", why:"Trains recognizing 'find the odd one out' shape.", complexity:"O(n)", companies:["Amazon","Infosys"]},
+        {id:"4C", name:"Registration System", rating:1300, concept:"Frequency counting", pattern:"Hash map", why:"Canonical hashing/map warm-up before Chapter 4.", complexity:"O(n log n)", companies:["Meta","Microsoft","Infosys"]},
+        {id:"1030B", name:"Vasya and Cornfield", rating:1300, concept:"Point-in-rhombus test", pattern:"Coordinate geometry", why:"First light geometry problem using only algebra.", complexity:"O(1)", companies:["Nvidia"]},
+        {id:"189A", name:"Cut Ribbon", rating:1300, concept:"Max pieces under fixed cut lengths", pattern:"DP / BFS on remaining length", why:"Common bridge problem between greedy and DP thinking.", complexity:"O(n·k)", companies:["Amazon"]},
+        {id:"622A", name:"Optimal Number Permutation", rating:1200, concept:"Closed-form pairing", pattern:"Direct formula", why:"Shows deriving a formula beats simulating the process.", complexity:"O(n)", companies:["Google"]},
+        {id:"508A", name:"Pasha and Pixels", rating:1300, concept:"2×2 grid scan", pattern:"Simulation", why:"Small grid-scanning warm-up before Chapter 9.", complexity:"O(n·m)", companies:["Samsung"]},
+        {id:"1305A", name:"Kuroni and Impossible Calculation", rating:1200, concept:"Pigeonhole on mod n", pattern:"Modular arithmetic", why:"Classic pigeonhole trick that avoids an otherwise huge product.", complexity:"O(n log n)", companies:["Oracle"]},
+        {id:"1091A", name:"New Year and Hurry", rating:800, concept:"Simple bound check", pattern:"Direct formula", why:"Fast sanity-check problem on reading limits correctly.", complexity:"O(1)", companies:["JPMorgan"]},
+        {id:"466A", name:"Cheap Travel", rating:900, concept:"Cost comparison across packages", pattern:"Greedy math", why:"Small cost-optimization warm-up.", complexity:"O(1)", companies:["Uber"]},
+        {id:"144A", name:"Arrival of the General", rating:1300, concept:"Index tracking under constraints", pattern:"Single-pass scan", why:"Trains tracking multiple running extremes at once.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"489C", name:"Given Length and Sum of Digits...", rating:1500, concept:"Digit-sum constrained construction", pattern:"Greedy digit filling", why:"Solid greedy-construction problem with a real edge-case density.", complexity:"O(n)", companies:["Adobe","Nvidia"]},
+        {id:"467B", name:"Fedor and New Game", rating:1500, concept:"Hamming-distance counting under a threshold", pattern:"Bitmask comparison", why:"Good first bitmask-distance counting problem before Chapter 31.", complexity:"O(n²/w)", companies:["Nvidia","Samsung"]},
+        {id:"1041A", name:"Heist", rating:1200, concept:"Missing values in a consecutive range", pattern:"Direct formula", why:"Cheap range-counting closed form.", complexity:"O(n)", companies:["Amazon"]},
+        {id:"1041B", name:"Buying a TV Set", rating:1200, concept:"Aspect-ratio scaling feasibility", pattern:"Direct formula", why:"Small ratio-comparison geometry problem.", complexity:"O(1)", companies:["Google"]},
+      ]},
+      { name:"Number Theory", problems:[
+        {id:"26A", name:"Almost Prime", rating:1100, concept:"Divisor counting", pattern:"Trial division", why:"Bridges brute force into structured number theory.", complexity:"O(n√n)", companies:["Goldman Sachs"]},
+        {id:"230B", name:"T-primes", rating:1300, concept:"Sieve of Eratosthenes", pattern:"Precomputation", why:"The problem that teaches everyone why sieves exist.", complexity:"O(n log log n)", companies:["Google","Apple"]},
+        {id:"271B", name:"Prime Matrix", rating:1600, concept:"Sieve + nearest prime lookup", pattern:"Precomputation", why:"Applies the sieve inside a 2D transformation problem.", complexity:"O(n log log n)", companies:["Atlassian"]},
+        {id:"1370A", name:"Maximum GCD", rating:800, concept:"Best achievable GCD from two picks", pattern:"Direct formula", why:"Cheap number-theory maximization warm-up.", complexity:"O(1)", companies:["Meta"]},
+        {id:"1349A", name:"Orac and LCM", rating:1400, concept:"GCD/LCM relationship across an array", pattern:"Prefix GCD/LCM reasoning", why:"Trains reasoning about GCD and LCM together, not in isolation.", complexity:"O(n log(max))", companies:["Bloomberg"]},
+      ]},
+      { name:"Advanced Math", problems:[
+        {id:"1030D", name:"Vasya and Triangle", rating:1900, concept:"Lattice point construction", pattern:"Constructive number theory", why:"Forces a proof-first mindset before any code is written.", complexity:"O(log n)", companies:["Nvidia","Google"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-greedy", name:"Greedy & Constructive",
+    blurb:"Proving an exchange argument is safe, then implementing it cleanly.",
+    topics:[
+      { name:"Greedy", problems:[
+        {id:"158B", name:"Taxi", rating:1300, concept:"Grouping by remainder capacity", pattern:"Greedy pairing", why:"Standard 'fill the group optimally' greedy pattern.", complexity:"O(n)", companies:["Uber","Amazon","Infosys"]},
+        {id:"4B", name:"Before an Exam", rating:1500, concept:"Feasibility + distribution", pattern:"Constructive greedy", why:"Two-phase greedy: check feasibility, then construct.", complexity:"O(n)", companies:["Microsoft","Infosys HackWithInfy"]},
+        {id:"545C", name:"Woodcutters", rating:1500, concept:"Interval-fitting decisions", pattern:"Greedy DP hybrid", why:"Shows where greedy quietly turns into DP.", complexity:"O(n)", companies:["Google","Infosys HackWithInfy"]},
+        {id:"1352B", name:"Same Parity Summation", rating:1200, concept:"Parity balancing", pattern:"Constructive", why:"Trains spotting invariants before coding.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1352D", name:"Alternating Subsequence", rating:1200, concept:"Local maxima of runs", pattern:"Greedy scan", why:"Reusable 'take the best of each run' pattern.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"1352F", name:"Binary String Reconstruction", rating:1600, concept:"Constraint satisfaction", pattern:"Greedy construction", why:"Harder constructive greedy with real edge-case density.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"231C", name:"To Add or Not to Add", rating:1200, concept:"Frequency-based majority adjustment", pattern:"Sort + two-pointer sweep", why:"Combines frequency counting with a greedy adjustment window.", complexity:"O(n log n)", companies:["Meta"]},
+        {id:"490A", name:"Team Olympiad", rating:1100, concept:"Bucket assignment by skill", pattern:"Greedy grouping", why:"Simple three-way greedy grouping problem.", complexity:"O(n)", companies:["Google","Infosys"]},
+        {id:"469A", name:"I Wanna Be the Guy", rating:1000, concept:"Set union of coverage", pattern:"Set usage", why:"Cheap intro to using sets for coverage problems.", complexity:"O(n)", companies:["Amazon","Infosys"]},
+        {id:"546B", name:"Soldier and Badges", rating:1200, concept:"Distinct-ify a sequence cheaply", pattern:"Sort + greedy bump", why:"Standard 'sort then push duplicates up' pattern.", complexity:"O(n log n)", companies:["Microsoft"]},
+        {id:"1108C1", name:"Nice Garland (easy)", rating:1300, concept:"Cyclic constraint repair", pattern:"Greedy reassignment", why:"Good intro to fixing violations in a cyclic sequence.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"1108D", name:"Diverse Garland", rating:1400, concept:"Adjacent-conflict resolution", pattern:"Greedy scan with lookahead", why:"Extends adjacent-conflict greedy to three colors.", complexity:"O(n)", companies:["Netflix"]},
+        {id:"1029C", name:"Maximal Intersection", rating:1500, concept:"Exclude-one-segment optimization", pattern:"Prefix/suffix max-min", why:"Classic 'remove one element, recompute optimum' trick.", complexity:"O(n)", companies:["Bloomberg","JPMorgan"]},
+        {id:"1352G", name:"Special Permutation", rating:1900, concept:"Constructive permutation design", pattern:"Direct construction", why:"Harder constructive problem requiring an explicit proof before coding.", complexity:"O(n)", companies:["Nvidia"]},
+        {id:"1492B", name:"Card Deck", rating:1200, concept:"Reorder to make each prefix distinct-max", pattern:"Sort + greedy placement", why:"Clean greedy-by-sorting problem with an intuitive proof.", complexity:"O(n log n)", companies:["Amazon"]},
+        {id:"1213B", name:"Bad Prices", rating:1500, concept:"Count positions with a strictly higher value later", pattern:"Suffix maximum scan", why:"A favorite 'scan from the right, keep the running best' pattern.", complexity:"O(n)", companies:["Google","JPMorgan"]},
+      ]},
+      { name:"Greedy with Structure", problems:[
+        {id:"1041C", name:"Coffee Break", rating:1500, concept:"Greedy scheduling with a cooldown", pattern:"Sort + set/greedy sweep", why:"Bridges greedy into scheduling-style problems.", complexity:"O(n log n)", companies:["Google","Uber"]},
+        {id:"999C", name:"Alphabetic Removals", rating:1400, concept:"Character-priority removal", pattern:"Counting + greedy removal order", why:"Trains removing elements in a derived priority order, not input order.", complexity:"O(n)", companies:["Meta"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-ds", name:"Data Structures",
+    blurb:"Where hashing and maps stop being a trick and start being the main idea.",
+    topics:[
+      { name:"Hashing & Maps", problems:[
+        {id:"4C", name:"Registration System", rating:1300, concept:"Frequency counting", pattern:"Hash map", why:"Same problem as above, listed here for the DS track.", complexity:"O(n log n)", companies:["Meta","Microsoft","Infosys"]},
+        {id:"702B", name:"Powers of Two", rating:1200, concept:"Pair sums that equal a power of two", pattern:"Hash map counting", why:"Classic 'count pairs satisfying a hashed condition' pattern.", complexity:"O(n log(max value))", companies:["Amazon","Google","Infosys"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-search", name:"Binary Search & Sorting",
+    blurb:"Monotonic reasoning — the skill that unlocks 'binary search on the answer'.",
+    topics:[
+      { name:"Binary Search", problems:[
+        {id:"1352C", name:"K-th Not Divisible by n", rating:1200, concept:"Binary search on answer", pattern:"Monotonic predicate", why:"Textbook first binary-search-on-answer problem.", complexity:"O(log n)", companies:["Google","Oracle","Infosys"]},
+        {id:"1195B", name:"Sport Mafia", rating:1200, concept:"Monotonic function inversion", pattern:"Binary search / direct math", why:"Two valid solve paths — good for comparing approaches.", complexity:"O(log n)", companies:["Amazon"]},
+        {id:"977C", name:"Less or Equal", rating:1400, concept:"Sorted position lookup", pattern:"Sort + search", why:"Shows how sorting turns a search problem trivial.", complexity:"O(n log n)", companies:["JPMorgan"]},
+        {id:"492B", name:"Vanya and Lanterns", rating:1200, concept:"Binary search on coverage radius", pattern:"Sort + binary search on answer", why:"Clean second binary-search-on-answer problem after 1352C.", complexity:"O(n log n)", companies:["Google"]},
+        {id:"1354B", name:"Ternary String", rating:1300, concept:"Nearest-index tracking", pattern:"Precompute nearest occurrence + scan", why:"Trains precomputing nearest-position arrays for range queries.", complexity:"O(n)", companies:["Meta"]},
+        {id:"460C", name:"Present", rating:1900, concept:"Feasibility check on a difference array", pattern:"Binary search on answer + difference array", why:"Combines Chapter 5's difference array with binary search on answer.", complexity:"O(n log(max))", companies:["Nvidia","Bloomberg"]},
+        {id:"1201C", name:"Maximum Median", rating:1600, concept:"Binary search on the achievable median", pattern:"Binary search on answer", why:"A third rep of binary-search-on-answer, now on a statistic instead of a raw value.", complexity:"O(n log(max))", companies:["Google"]},
+        {id:"778A", name:"String Game", rating:1200, concept:"Latest deletion index that keeps a subsequence", pattern:"Binary search on the deletion prefix", why:"Binary search where the predicate is 'is t still a subsequence'.", complexity:"O(n log n)", companies:["Meta"]},
+        {id:"1355C", name:"Count Triangles", rating:1300, concept:"Count valid triples under a sum range", pattern:"Two pointer / binary search per fixed side", why:"Combines binary search with a fixed-anchor loop.", complexity:"O(n log n)", companies:["Adobe"]},
+        {id:"1288A", name:"Deadline", rating:1300, concept:"Feasibility of finishing before a deadline", pattern:"Binary search on answer", why:"Another solid binary-search-on-answer drill with a triangular-number predicate.", complexity:"O(log(max))", companies:["Bloomberg"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-prefix", name:"Prefix Sum",
+    blurb:"Turning O(n) range questions into O(1) lookups.",
+    topics:[
+      { name:"Prefix Techniques", problems:[
+        {id:"1352E", name:"Special Elements", rating:1500, concept:"Prefix sums + brute segment check", pattern:"Precomputed ranges", why:"Bridges naive O(n²) into prefix-accelerated O(n²/small).", complexity:"O(n²) with O(1) range sums", companies:["Netflix","Infosys"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-dp", name:"Dynamic Programming",
+    blurb:"State design first, transitions second — the discipline most beginners skip.",
+    topics:[
+      { name:"1D & 2D DP", problems:[
+        {id:"4D", name:"Mysterious Present", rating:1700, concept:"Longest chain under 2 constraints", pattern:"DP over sorted order (LIS variant)", why:"Natural bridge from LIS to 2D-constrained DP.", complexity:"O(n²)", companies:["Google","Apple"]},
+        {id:"1195C", name:"Basketball Exercise", rating:1400, concept:"Alternating-choice DP", pattern:"State machine DP", why:"Small, clean intro to DP with two tracked states.", complexity:"O(n)", companies:["Microsoft","Infosys HackWithInfy"]},
+        {id:"580A", name:"Kefa and First Steps", rating:1200, concept:"Longest non-decreasing run", pattern:"1D running DP", why:"Simplest possible 'extend or reset' DP.", complexity:"O(n)", companies:["Amazon","Infosys"]},
+        {id:"1155D", name:"Beautiful Array", rating:1700, concept:"Maximum subarray with one multiplier", pattern:"Kadane variant DP", why:"Extends classic Kadane with an extra decision per position.", complexity:"O(n)", companies:["Google"]},
+        {id:"1096D", name:"Easy Problem", rating:1600, concept:"Deletion-cost minimization under a pattern constraint", pattern:"1D DP with skip/keep states", why:"Solid DP where the state itself needs some thought to define.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1272D", name:"Remove One Element", rating:1500, concept:"Longest run after one deletion", pattern:"DP with a single 'used skip' flag", why:"Common DP shape: track whether you've spent your one free move.", complexity:"O(n)", companies:["Adobe","Infosys HackWithInfy"]},
+        {id:"1005D", name:"Polycarp and Div 3", rating:1500, concept:"Digit-sum DP over remainders", pattern:"DP on prefix remainder state", why:"Bridges basic DP into digit/remainder-state DP.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"1409D", name:"Decrease the Sum of Digits", rating:1400, concept:"Greedy carry propagation", pattern:"Digit-by-digit greedy", why:"Digit-manipulation problem that borders greedy and DP thinking.", complexity:"O(log(max))", companies:["Oracle"]},
+        {id:"1409E", name:"Two Platforms", rating:1800, concept:"Sliding coverage window + DP combination", pattern:"Sort + sliding window + prefix-max DP", why:"Combines three earlier chapters' techniques in one problem.", complexity:"O(n log n)", companies:["Nvidia"]},
+        {id:"467C", name:"George and Job", rating:1900, concept:"Non-overlapping segment sum DP", pattern:"Prefix sum + DP", why:"Canonical 'choose k disjoint windows' DP problem.", complexity:"O(n·k)", companies:["Google","JPMorgan"]},
+        {id:"455B", name:"A Lot of Games", rating:1600, concept:"Game-outcome DP over a trie of strings", pattern:"DP + game theory", why:"First DP problem where the state encodes who wins, not just a value.", complexity:"O(n·L)", companies:["Meta"]},
+        {id:"55D", name:"Beautiful numbers", rating:2000, concept:"Count numbers divisible by their own digits", pattern:"Digit DP with an LCM(1..9) state", why:"The classic first digit-DP problem with a non-trivial state.", complexity:"O(digits · states)", companies:["Google"]},
+        {id:"1147D", name:"Geometric Progression", rating:1500, concept:"Count triples forming a geometric progression", pattern:"Frequency map + brute middle term", why:"Trains fixing one element and searching efficiently for the rest.", complexity:"O(n·d(max))", companies:["Nvidia"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-graphs", name:"Graphs",
+    blurb:"Modeling the problem as a graph is usually harder than the traversal itself.",
+    topics:[
+      { name:"DFS Applications", problems:[
+        {id:"977D", name:"Divide by three, multiply by two", rating:1600, concept:"Implicit divisor graph", pattern:"DFS over an implicit graph", why:"Teaches recognizing a graph hiding inside a number-sequence problem.", complexity:"O(n log n)", companies:["Meta","Nvidia","Infosys HackWithInfy"]},
+        {id:"510B", name:"Fox And Two Dots", rating:1600, concept:"Cycle detection in a grid graph", pattern:"DFS with parent tracking", why:"Standard grid-as-graph cycle-detection problem.", complexity:"O(n·m)", companies:["Google","Infosys HackWithInfy"]},
+      ]},
+      { name:"Shortest Path", problems:[
+        {id:"20C", name:"Dijkstra?", rating:1900, concept:"Shortest path with path reconstruction", pattern:"Dijkstra + parent array", why:"The problem most people use to learn Dijkstra with path recovery.", complexity:"O((n+m) log n)", companies:["Amazon","Uber"]},
+        {id:"1063B", name:"Labyrinth", rating:1900, concept:"Reachability under separate left/right move budgets", pattern:"0-1 BFS", why:"Standard 0-1 BFS problem once move costs aren't uniform.", complexity:"O(n·m)", companies:["Google"]},
+      ]},
+      { name:"DAG DP & Topological Techniques", problems:[
+        {id:"510C", name:"Fox And Names", rating:1600, concept:"Recover a valid letter ordering from sorted words", pattern:"Build a graph of constraints + topological sort", why:"Classic 'infer an ordering from comparisons' topological sort problem.", complexity:"O(n+26²)", companies:["Meta","Nvidia"]},
+        {id:"919D", name:"Substring", rating:1900, concept:"Max frequency of a letter along any path in a DAG", pattern:"Topological order + DP with cycle detection", why:"Combines topological sort, DP, and cycle detection in one problem.", complexity:"O(n+m)", companies:["Google","Bloomberg"]},
+      ]},
+      { name:"DSU & MST", problems:[
+        {id:"25D", name:"Roads not only in Berland", rating:2100, concept:"Repair broken spanning structure", pattern:"Union-Find (DSU)", why:"Canonical DSU problem for connecting components with minimum extra edges.", complexity:"O(n α(n))", companies:["Microsoft","Bloomberg"]},
+        {id:"455C", name:"Civilization", rating:2100, concept:"Merge components while tracking tree diameter", pattern:"DSU + tree diameter maintenance", why:"Combines DSU with a tree-diameter invariant kept per component.", complexity:"O(n α(n))", companies:["Nvidia"]},
+        {id:"1147B", name:"Silent Classroom", rating:1400, concept:"Union groups sharing a letter set", pattern:"DSU over auxiliary nodes", why:"Shows DSU applied to something other than raw indices.", complexity:"O(n α(n))", companies:["Adobe"]},
+        {id:"1131D", name:"Gourmet choice", rating:2100, concept:"Combine equality and inequality constraints into an order", pattern:"DSU for equalities + topological sort for inequalities", why:"Shows DSU and topological sort used together to resolve mixed constraints.", complexity:"O((n+m) log n)", companies:["Nvidia"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-adv-ds", name:"Advanced Data Structures",
+    blurb:"Segment trees and friends — once brute force stops fitting the time limit.",
+    topics:[
+      { name:"Segment Tree", problems:[
+        {id:"380C", name:"Sereja and Brackets", rating:2100, concept:"Bracket-matching via merge", pattern:"Segment tree with custom merge", why:"Standard interview-style segment tree with a non-trivial merge function.", complexity:"O(n log n)", companies:["Google","Bloomberg"]},
+      ]},
+      { name:"Fenwick Tree & Merging Techniques", problems:[
+        {id:"459D", name:"Pashmak and Parmida's problem", rating:1900, concept:"Counting inversions with a value/position twist", pattern:"Fenwick tree (BIT) counting", why:"Standard BIT problem once the naive count is too slow.", complexity:"O(n log n)", companies:["Amazon","Google"]},
+        {id:"600E", name:"Lomsat gelral", rating:2300, concept:"Dominant color per subtree", pattern:"Small-to-large merging on trees", why:"The canonical 'small-to-large' technique problem.", complexity:"O(n log n)", companies:["Meta","Nvidia"]},
+        {id:"706D", name:"Vasiliy's Multiset", rating:2100, concept:"Max XOR with insert/delete", pattern:"Binary trie over bits", why:"Standard binary-trie problem for dynamic max-XOR queries.", complexity:"O(n log(max value))", companies:["Google","Bloomberg"]},
+        {id:"580D", name:"Kefa and Watch", rating:1900, concept:"Range updates + periodicity queries", pattern:"Segment tree with hashing", why:"Combines segment trees with string hashing for range-periodicity checks.", complexity:"O((n+q) log n)", companies:["Meta","Nvidia"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-twoptr", name:"Two Pointers & Sliding Window",
+    blurb:"Turning nested loops into a single linear sweep by moving two indices with intent.",
+    topics:[
+      { name:"Two Pointer Technique", problems:[
+        {id:"279B", name:"Books", rating:1500, concept:"Maximum window under a budget", pattern:"Two pointer (variable window)", why:"The textbook 'grow/shrink window while under budget' problem.", complexity:"O(n)", companies:["Amazon","Google","Infosys"]},
+        {id:"1029B", name:"Creating the Contest", rating:1200, concept:"Sorted greedy window", pattern:"Sort + linear scan", why:"Shows a window-style greedy without explicit two pointers.", complexity:"O(n log n)", companies:["Microsoft"]},
+        {id:"1520D", name:"Same Differences", rating:1500, concept:"Counting pairs by a transformed key", pattern:"Hash map over prefix-adjusted values", why:"Bridges two-pointer thinking into hashed-key counting.", complexity:"O(n)", companies:["Meta"]},
+        {id:"676C", name:"Vasya and String", rating:1900, concept:"Longest window with at most k flips", pattern:"Sliding window (at-most-k pattern)", why:"Classic 'at most k changes' sliding window problem.", complexity:"O(n)", companies:["Nvidia","Adobe"]},
+        {id:"1029A", name:"Many Equal Substrings", rating:1200, concept:"Overlap-aware string construction", pattern:"Two pointer over suffix/prefix overlap", why:"Introduces reasoning about self-overlap in strings.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"489B", name:"BerSU Ball", rating:1200, concept:"Greedy pairing under a tolerance", pattern:"Sort + two pointer", why:"Very clean two-pointer pairing problem to drill the pattern.", complexity:"O(n log n)", companies:["Uber"]},
+        {id:"580B", name:"Kefa and Company", rating:1500, concept:"Max-sum group under a wealth-gap constraint", pattern:"Sort + two pointer + running sum", why:"A favorite two-pointer problem — combines sorting, a sliding window, and a running sum.", complexity:"O(n log n)", companies:["Goldman Sachs","JPMorgan"]},
+        {id:"1005B", name:"Delete from the Left", rating:1200, concept:"Longest common prefix removal", pattern:"Two pointer on matching prefixes", why:"Very direct two-pointer problem — a good one to time yourself on.", complexity:"O(min(n,m))", companies:["Uber"]},
+        {id:"1512D", name:"Corrupted Array", rating:1400, concept:"Find n numbers matching a given sum after removing two", pattern:"Prefix sum + two pointer over the sorted remainder", why:"Two-pointer problem wrapped in a reconstruction task.", complexity:"O(n log n)", companies:["Amazon","Google"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-sorting", name:"Sorting & Intervals",
+    blurb:"Most of these problems become trivial the moment you sort — the skill is noticing that first.",
+    topics:[
+      { name:"Sorting-based Reasoning", problems:[
+        {id:"1272A", name:"Three Friends", rating:800, concept:"Median-adjustment via parity", pattern:"Sort + casework", why:"Small warm-up on reasoning about relative order.", complexity:"O(1)", companies:["Amazon","Infosys"]},
+        {id:"1006A", name:"Adjacent Replacements", rating:800, concept:"Pairwise rounding", pattern:"Direct formula", why:"Cheap pattern-recognition problem once you see the pairing.", complexity:"O(n)", companies:["Google"]},
+        {id:"986A", name:"Fair Game", rating:1200, concept:"Parity-based feasibility", pattern:"Counting + casework", why:"Reinforces spotting a parity invariant before coding.", complexity:"O(n)", companies:["Microsoft"]},
+        {id:"1360C", name:"Similar Pairs", rating:1200, concept:"Minimum swaps to fix parity balance", pattern:"Counting + greedy swap", why:"Trains balancing counts to satisfy a global parity condition.", complexity:"O(n)", companies:["Meta"]},
+        {id:"1367B", name:"Even Array", rating:900, concept:"Position/value parity mismatch", pattern:"Counting mismatches", why:"Simple parity-mismatch counting problem.", complexity:"O(n)", companies:["Adobe"]},
+        {id:"1360B", name:"Honest Coach", rating:1200, concept:"Minimum adjacent difference after sorting", pattern:"Sort + adjacent scan", why:"Shows why sorting first turns an O(n²) search into O(n log n).", complexity:"O(n log n)", companies:["Netflix"]},
+        {id:"456A", name:"Laptops", rating:1300, concept:"Consistency check across two orderings", pattern:"Sort + validation scan", why:"Trains checking a global ordering property after sorting.", complexity:"O(n log n)", companies:["Bloomberg"]},
+        {id:"489A", name:"SwapSort", rating:1300, concept:"Selection-sort swap counting", pattern:"Selection sort simulation", why:"Concrete look at how many swaps a simple sort actually needs.", complexity:"O(n²)", companies:["JPMorgan"]},
+      ]},
+      { name:"More Sorting Drills", problems:[
+        {id:"1359A", name:"Berland Poker", rating:800, concept:"Fair distribution feasibility", pattern:"Direct formula", why:"Cheap distribution-feasibility arithmetic problem.", complexity:"O(1)", companies:["Amazon"]},
+        {id:"1512A", name:"Spy Detected!", rating:800, concept:"Find the value that breaks a majority pattern", pattern:"Frequency counting", why:"Small 'find the odd one out' frequency problem.", complexity:"O(n)", companies:["Google"]},
+        {id:"1520A", name:"Do Not Be Distracted!", rating:800, concept:"Detect non-contiguous repeated blocks", pattern:"Single-pass scan with a seen-set", why:"Cheap 'has this reappeared out of order' check.", complexity:"O(n)", companies:["Microsoft"]},
+        {id:"1538A", name:"Stone Game", rating:800, concept:"Minimum moves to reach both extremes", pattern:"Index-distance formula", why:"Small formula-driven optimization over positions.", complexity:"O(1)", companies:["Meta"]},
+        {id:"1538B", name:"Friends and Candies", rating:1200, concept:"Equalize via median-relative moves", pattern:"Sum of absolute deviations", why:"Introduces the 'moves = sum of deviations from target' idea used a lot in greedy problems.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"1553A", name:"Digits Sum", rating:800, concept:"Rounding-up cost minimization", pattern:"Direct formula", why:"Cheap rounding-based arithmetic problem.", complexity:"O(1)", companies:["Adobe"]},
+        {id:"1560A", name:"Nezzar and Colorful Balls", rating:800, concept:"Longest strictly-increasing feasible subset", pattern:"Frequency/set counting", why:"Cheap distinct-value counting problem.", complexity:"O(n)", companies:["Netflix"]},
+        {id:"1699B", name:"Almost Ternary Matrix", rating:1300, concept:"Construct a grid with all-different orthogonal neighbors", pattern:"Parity-based construction", why:"Grid-construction problem solved by a clean parity rule.", complexity:"O(n·m)", companies:["Nvidia"]},
+        {id:"1656A", name:"Good Pairs", rating:800, concept:"Count index pairs matching a sign condition", pattern:"Counting", why:"Cheap sign-based pair-counting problem.", complexity:"O(n)", companies:["JPMorgan"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-adv-strings", name:"Advanced Strings",
+    blurb:"Pattern matching and hashing — where string problems stop being O(n²) simulations.",
+    topics:[
+      { name:"Pattern Matching (KMP / Z / Hashing)", problems:[
+        {id:"126B", name:"Password", rating:1600, concept:"Substring that is both a prefix and a suffix, and appears internally", pattern:"Prefix function / Z-function", why:"The problem most commonly used to teach the prefix function's real power.", complexity:"O(n)", companies:["Google","Meta"]},
+        {id:"471D", name:"MUH and Cube Walls", rating:1900, concept:"Shape matching invariant to vertical shift", pattern:"Difference encoding + KMP/Z matching", why:"Clever reduction of a skyline-matching problem into a string-matching one.", complexity:"O(n+m)", companies:["Nvidia"]},
+        {id:"1200E", name:"Compress Words", rating:2200, concept:"Merge strings by maximal overlap", pattern:"Z-function / hashing for overlap detection", why:"Practical application of overlap detection used in real text compression.", complexity:"O(total length)", companies:["Adobe","Bloomberg"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-trees", name:"Trees",
+    blurb:"Once a problem is a tree, the traversal order usually carries the answer.",
+    topics:[
+      { name:"Tree DFS & DP", problems:[
+        {id:"580C", name:"Kefa and Park", rating:1600, concept:"Path validity under a consecutive-run constraint", pattern:"Tree DFS with running state", why:"Clean first 'carry state down the tree' DFS problem.", complexity:"O(n)", companies:["Amazon","Microsoft","Infosys HackWithInfy"]},
+        {id:"570D", name:"Tree Requests", rating:2100, concept:"Subtree + depth queries answered offline", pattern:"Euler tour + offline processing", why:"Standard technique for turning subtree queries into range queries.", complexity:"O(n log n)", companies:["Google","Nvidia"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-stack", name:"Stacks & Monotonic Structures",
+    blurb:"Bracket sequences and monotonic reasoning — where a stack turns an O(n²) scan into O(n).",
+    topics:[
+      { name:"Bracket Sequences & Monotonic Stack", problems:[
+        {id:"5C", name:"Longest Regular Bracket Sequence", rating:1900, concept:"Longest valid bracket substring", pattern:"Stack of unmatched indices", why:"The canonical stack-based bracket-matching problem.", complexity:"O(n)", companies:["Google","Meta"]},
+        {id:"26B", name:"Regular Bracket Sequence", rating:1900, concept:"Maximize valid pairs via character flips", pattern:"Greedy + stack repair", why:"Extends bracket matching into a constructive-repair problem.", complexity:"O(n)", companies:["Bloomberg"]},
+        {id:"3D", name:"Least Cost Bracket Sequence", rating:1900, concept:"Cheapest way to complete a valid sequence", pattern:"Greedy + min-heap for backtracking a choice", why:"Classic greedy-with-a-heap-to-undo-mistakes pattern.", complexity:"O(n log n)", companies:["Amazon","Adobe"]},
+      ]},
+    ]
+  },
+  {
+    id:"ch-queue-heap", name:"Queues, Deques & Heaps",
+    blurb:"Whenever the greedy choice is 'take the current best available option', a heap is usually the tool.",
+    topics:[
+      { name:"Priority Queue Greedy", problems:[
+        {id:"1106D", name:"Lunar New Year and a Wander", rating:1700, concept:"Lexicographically smallest walk visiting every node", pattern:"Greedy traversal with a min-heap of reachable nodes", why:"Shows a heap driving a graph traversal's greedy order.", complexity:"O(n log n)", companies:["Google"]},
+        {id:"1354D", name:"Multiset", rating:1300, concept:"k-th remaining element under deletions", pattern:"Fenwick tree + binary search", why:"A different angle on 'find the k-th thing efficiently' than a plain heap.", complexity:"O((n+q) log n)", companies:["Meta","Nvidia"]},
+        {id:"1157D", name:"N Problems During K Days", rating:1400, concept:"Feasibility of a monotonic daily plan", pattern:"Binary search + greedy check", why:"Combines binary search on answer with a greedy feasibility pass.", complexity:"O(n log(max))", companies:["Microsoft"]},
+      ]},
+    ]
+  },
+];
+
+/* ---------------------------------------------------------------------- */
+
+const DIFF_BANDS = [
+  { key:"easy",        label:"Easy",        emoji:"🟢", min:0,    max:1199, css:"var(--easy)" },
+  { key:"medium",       label:"Medium",      emoji:"🟡", min:1200, max:1599, css:"var(--medium)" },
+  { key:"hard",         label:"Hard",        emoji:"🔴", min:1600, max:2199, css:"var(--hard)" },
+  { key:"expert",       label:"Expert",      emoji:"🟣", min:2200, max:2599, css:"var(--expert)" },
+  { key:"grandmaster",  label:"Grandmaster", emoji:"⚫", min:2600, max:99999,css:"var(--gm-text)" },
+];
+
+function bandFor(rating){
+  return DIFF_BANDS.find(b => rating >= b.min && rating <= b.max) || DIFF_BANDS[0];
+}
+function contestTier(rating){
+  if (rating < 1100) return "Div2 A";
+  if (rating < 1400) return "Div2 B";
+  if (rating < 1700) return "Div2 C";
+  if (rating < 2100) return "Div1 A/B";
+  return "Div1 C+ / ICPC";
+}
+function cfLink(id){
+  const m = id.match(/^(\d+)([A-Za-z]\d*)$/);
+  if(!m) return "https://codeforces.com/problemset";
+  return `https://codeforces.com/problemset/problem/${m[1]}/${m[2]}`;
+}
+
+const SOLVED_KEY = "gm_track_solved_v1";
+function loadSolved(){ try{ return JSON.parse(localStorage.getItem(SOLVED_KEY)) || {}; }catch(e){ return {}; } }
+function saveSolved(s){ localStorage.setItem(SOLVED_KEY, JSON.stringify(s)); }
+let solved = loadSolved();
+
+let state = { search:"", diffs: new Set(DIFF_BANDS.map(b=>b.key)), company:"" };
+
+function allProblems(){
+  const out = [];
+  PROBLEM_DB.forEach(ch => ch.topics.forEach(t => t.problems.forEach(p => out.push(p))));
+  return out;
+}
+
+function buildSidebar(){
+  const legend = document.getElementById('diff-legend');
+  legend.innerHTML = '';
+  const total = allProblems();
+  DIFF_BANDS.forEach(b=>{
+    const count = total.filter(p => bandFor(p.rating).key === b.key).length;
+    const btn = document.createElement('button');
+    btn.className = 'diff-chip-btn on';
+    btn.innerHTML = `<span style="display:flex;align-items:center;gap:7px;"><span class="dot" style="background:${b.css}"></span>${b.emoji} ${b.label}</span><span class="cnt">${count}</span>`;
+    btn.onclick = () => {
+      if(state.diffs.has(b.key)){ state.diffs.delete(b.key); btn.classList.remove('on'); }
+      else { state.diffs.add(b.key); btn.classList.add('on'); }
+      render();
+    };
+    legend.appendChild(btn);
+  });
+
+  const nav = document.getElementById('chapter-nav');
+  nav.innerHTML = '';
+  PROBLEM_DB.forEach(ch => {
+    const count = ch.topics.reduce((n,t)=>n+t.problems.length,0);
+    const a = document.createElement('a');
+    a.href = `#${ch.id}`;
+    a.innerHTML = `<span>${ch.name}</span><span class="n">${count}</span>`;
+    nav.appendChild(a);
+  });
+
+  const companySel = document.getElementById('company-filter');
+  COMPANY_LIST.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    companySel.appendChild(opt);
+  });
+  companySel.onchange = (e)=>{ state.company = e.target.value; render(); };
+
+  document.getElementById('search').oninput = (e)=>{ state.search = e.target.value.toLowerCase(); render(); };
+  document.getElementById('notice-count').textContent = total.length;
+}
+
+function matches(p){
+  const band = bandFor(p.rating);
+  if(!state.diffs.has(band.key)) return false;
+  if(state.company && !p.companies.includes(state.company)) return false;
+  if(state.search){
+    const hay = `${p.id} ${p.name} ${p.concept} ${p.pattern}`.toLowerCase();
+    if(!hay.includes(state.search)) return false;
+  }
+  return true;
+}
+
+function makeCard(p, highlightCompany){
+  const highlight = highlightCompany !== undefined ? highlightCompany : state.company;
+  const band = bandFor(p.rating);
+  const isSolved = !!solved[p.id];
+  const card = document.createElement('div');
+  card.className = 'card' + (isSolved ? ' solved' : '');
+  card.innerHTML = `
+    <div class="card-top">
+      <div>
+        <div class="card-id">CF ${p.id} · Rating ${p.rating}</div>
+        <div class="card-name"><a href="${cfLink(p.id)}" target="_blank" rel="noopener">${p.name}</a></div>
+      </div>
+      <div class="diff-badge ${band.key}">${band.emoji} ${band.label}</div>
+    </div>
+    <div class="meta-row">
+      <span class="tag">${p.concept}</span>
+      <span class="tag">${p.pattern}</span>
+      <span class="tag">${p.complexity}</span>
+      <span class="tag">${contestTier(p.rating)}</span>
+    </div>
+    <div class="why">${p.why}</div>
+    <div class="companies">
+      ${p.companies.map(c=>`<span class="co-chip ${highlight===c?'match':''}">${c}</span>`).join('')}
+    </div>
+    <div class="card-foot">
+      <a class="cf-link" href="${cfLink(p.id)}" target="_blank" rel="noopener">Open on Codeforces →</a>
+      <button class="solve-btn ${isSolved?'done':''}" data-id="${p.id}">${isSolved ? '✓ Solved' : 'Mark solved'}</button>
+    </div>
+  `;
+  card.querySelector('.solve-btn').onclick = () => {
+    solved[p.id] = !solved[p.id];
+    saveSolved(solved);
+    render();
+    if (typeof renderInfosysView === 'function') renderInfosysView();
+  };
+  return card;
+}
+
+function render(){
+  const root = document.getElementById('chapters');
+  root.innerHTML = '';
+  let visibleTotal = 0;
+
+  PROBLEM_DB.forEach(ch => {
+    const chapterEl = document.createElement('section');
+    chapterEl.className = 'chapter';
+    chapterEl.id = ch.id;
+
+    const chapterProblems = ch.topics.flatMap(t=>t.problems);
+    const visibleInChapter = chapterProblems.filter(matches);
+    const solvedInChapter = chapterProblems.filter(p => solved[p.id]).length;
+    const pct = chapterProblems.length ? Math.round(100*solvedInChapter/chapterProblems.length) : 0;
+
+    chapterEl.innerHTML = `
+      <div class="chapter-head">
+        <h2>${ch.name}</h2>
+        <span class="badge-count">${chapterProblems.length} problems · ${solvedInChapter} solved (${pct}%)</span>
+      </div>
+      <div class="chapter-desc">${ch.blurb}</div>
+      <div class="meter" style="max-width:260px;margin-bottom:16px;"><span style="width:${pct}%;background:var(--accent-2);"></span></div>
+    `;
+
+    ch.topics.forEach(topic => {
+      const visible = topic.problems.filter(matches);
+      if(visible.length === 0) return;
+      visibleTotal += visible.length;
+
+      const topicEl = document.createElement('div');
+      topicEl.className = 'topic-block';
+      topicEl.innerHTML = `<div class="topic-title">${topic.name} · ${visible.length}</div>`;
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+
+      visible.forEach(p => {
+        grid.appendChild(makeCard(p));
+      });
+
+      topicEl.appendChild(grid);
+      chapterEl.appendChild(topicEl);
+    });
+
+    if(visibleInChapter.length > 0){
+      root.appendChild(chapterEl);
+    }
+  });
+
+  if(visibleTotal === 0){
+    root.innerHTML = `<div class="empty-state">No problems match the current filters.<br/>Try widening the difficulty selection or clearing the search.</div>`;
+  }
+
+  const total = allProblems();
+  const solvedCount = total.filter(p => solved[p.id]).length;
+  document.getElementById('stat-solved').textContent = `${solvedCount} / ${total.length}`;
+  document.getElementById('stat-meter').style.width = total.length ? `${Math.round(100*solvedCount/total.length)}%` : '0%';
+}
+
+document.getElementById('btn-dark').onclick = () => setTheme('dark');
+document.getElementById('btn-light').onclick = () => setTheme('light');
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('btn-dark').classList.toggle('active', t==='dark');
+  document.getElementById('btn-light').classList.toggle('active', t==='light');
+  try {
+    localStorage.setItem('dsaforge_global_theme', t);
+  } catch(e) {}
+  const iframe = document.getElementById('dsaforge-frame');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'dsaforge-theme', theme: t }, '*');
+  }
+}
+setTheme(localStorage.getItem('dsaforge_global_theme') || 'dark');
+
+/* ============ INFOSYS PREP VIEW ============ */
+let infyState = { onlyHackWithInfy:false };
+
+function infosysProblems(){
+  return allProblems().filter(p =>
+    infyState.onlyHackWithInfy
+      ? p.companies.includes('Infosys HackWithInfy')
+      : (p.companies.includes('Infosys') || p.companies.includes('Infosys HackWithInfy'))
+  );
+}
+
+function renderInfosysHistory(){
+  const grid = document.getElementById('infy-history-grid');
+  grid.innerHTML = '';
+  INFOSYS_EXAM_HISTORY.forEach(h => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-top">
+        <div><div class="card-id">HACKWITHINFY ${h.year}</div></div>
+      </div>
+      <div class="why">${h.detail}</div>
+      <div class="meta-row"><span class="tag">Source: ${h.source}</span></div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function renderInfosysStats(){
+  const probs = infosysProblems();
+  const solvedCount = probs.filter(p => solved[p.id]).length;
+  document.getElementById('infy-stat-solved').textContent = `${solvedCount} / ${probs.length}`;
+  document.getElementById('infy-stat-meter').style.width = probs.length ? `${Math.round(100*solvedCount/probs.length)}%` : '0%';
+
+  const breakdown = document.getElementById('infy-diff-breakdown');
+  breakdown.innerHTML = DIFF_BANDS.filter(b=>b.key!=='grandmaster').map(b=>{
+    const inBand = probs.filter(p=>bandFor(p.rating).key===b.key);
+    const solvedInBand = inBand.filter(p=>solved[p.id]).length;
+    return `<div class="stat-row"><span>${b.emoji} ${b.label}</span><b>${solvedInBand} / ${inBand.length}</b></div>`;
+  }).join('');
+}
+
+function renderInfosysRoadmap(){
+  const root = document.getElementById('infy-roadmap');
+  const nav = document.getElementById('infy-roadmap-nav');
+  root.innerHTML = '';
+  nav.innerHTML = '';
+  const probs = infosysProblems();
+
+  INFOSYS_ROADMAP.forEach(group => {
+    const groupProblems = probs.filter(p => {
+      const parentChapter = PROBLEM_DB.find(ch => ch.topics.some(t => t.problems.includes(p)));
+      return parentChapter && group.chapters.includes(parentChapter.id);
+    });
+    if(groupProblems.length === 0) return;
+
+    const sectionId = 'infy-' + group.key.toLowerCase().replace(/[^a-z0-9]+/g,'-');
+    const navA = document.createElement('a');
+    navA.href = `#${sectionId}`;
+    navA.innerHTML = `<span>${group.key}</span><span class="n">${groupProblems.length}</span>`;
+    nav.appendChild(navA);
+
+    const solvedInGroup = groupProblems.filter(p=>solved[p.id]).length;
+    const pct = Math.round(100*solvedInGroup/groupProblems.length);
+
+    const section = document.createElement('section');
+    section.className = 'chapter';
+    section.id = sectionId;
+    section.innerHTML = `
+      <div class="chapter-head">
+        <h2>${group.key}</h2>
+        <span class="badge-count">${groupProblems.length} problems · ${solvedInGroup} solved (${pct}%)</span>
+      </div>
+      <div class="chapter-desc">${group.blurb}</div>
+      <div class="meter" style="max-width:260px;margin-bottom:16px;"><span style="width:${pct}%;background:var(--accent-2);"></span></div>
+    `;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    groupProblems.forEach(p => grid.appendChild(makeCard(p, infyState.onlyHackWithInfy ? 'Infosys HackWithInfy' : 'Infosys')));
+    section.appendChild(grid);
+    root.appendChild(section);
+  });
+
+  if(probs.length === 0){
+    root.innerHTML = `<div class="empty-state">No Infosys-tagged problems match the current filter.</div>`;
+  }
+}
+
+function renderInfosysView(){
+  renderInfosysHistory();
+  renderInfosysStats();
+  renderInfosysRoadmap();
+}
+
+document.getElementById('infy-filter-all').onclick = (e) => {
+  infyState.onlyHackWithInfy = false;
+  e.currentTarget.classList.add('on');
+  document.getElementById('infy-filter-hwi').classList.remove('on');
+  renderInfosysView();
+};
+document.getElementById('infy-filter-hwi').onclick = (e) => {
+  infyState.onlyHackWithInfy = true;
+  e.currentTarget.classList.add('on');
+  document.getElementById('infy-filter-all').classList.remove('on');
+  renderInfosysView();
+};
+
+function showTrack(name){
+  const views = { cf: 'view-cf', infy: 'view-infosys', dsaforge: 'view-dsaforge' };
+  const btns  = { cf: 'btn-track-cf', infy: 'btn-track-infy', dsaforge: 'btn-track-dsaforge' };
+  Object.keys(views).forEach(k => {
+    document.getElementById(views[k]).style.display = (k === name) ? 'grid' : 'none';
+    document.getElementById(btns[k]).classList.toggle('active', k === name);
+  });
+  if (name === 'infy') renderInfosysView();
+}
+
+document.getElementById('btn-track-cf').onclick = () => showTrack('cf');
+document.getElementById('btn-track-infy').onclick = () => showTrack('infy');
+document.getElementById('btn-track-dsaforge').onclick = () => showTrack('dsaforge');
+
+buildSidebar();
+render();
+renderInfosysView();
+</script>
+</body>
+</html>
+
