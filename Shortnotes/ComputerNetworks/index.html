@@ -470,6 +470,52 @@ canvas{ display:block; width:100%; border:1px solid var(--border); border-radius
 .hd-pulse{ animation:hdPulse 1.6s ease-in-out infinite; }
 .hd-blink{ animation:hdBlink 1s steps(1) infinite; }
 .hd-flow-line{ stroke-dasharray:5 5; animation:hdDash 1.2s linear infinite; }
+
+/* ---------- router admin panel replica ---------- */
+.routerui{
+  --ru-teal:#2fb8ae; --ru-teal-dk:#249a91; --ru-yellow:#f5b400; --ru-ink:#33474a;
+  --ru-sub:#5c7378; --ru-line:#e3eeee; --ru-bg:#ffffff;
+  border-radius:8px; overflow:hidden; border:1px solid var(--border);
+  font-family:var(--sans); color:var(--ru-ink); margin:16px 0 22px; background:var(--ru-bg);
+}
+.routerui *{ box-sizing:border-box; }
+.ru-topbar{ background:var(--ru-teal); color:#fff; display:flex; align-items:center; gap:18px; padding:12px 18px; flex-wrap:wrap; }
+.ru-brand{ font-weight:800; font-size:16px; display:flex; align-items:center; gap:6px; }
+.ru-brand::before{ content:'📶'; }
+.ru-tabs{ display:flex; gap:22px; margin-left:10px; }
+.ru-tabs button{ background:none; border:none; color:rgba(255,255,255,.85); font-size:14px; padding:8px 4px; cursor:pointer; border-bottom:2px solid transparent; }
+.ru-tabs button.active{ color:#fff; font-weight:700; border-bottom-color:#fff; }
+.ru-actions{ margin-left:auto; display:flex; gap:16px; align-items:center; font-size:12.5px; color:#fff; }
+.ru-body{ display:flex; min-height:420px; }
+.ru-sidebar{ width:190px; background:var(--ru-teal); flex-shrink:0; padding:10px; display:flex; flex-direction:column; gap:6px; }
+.ru-sidebar button{ text-align:left; background:rgba(255,255,255,.12); border:none; color:#fff; padding:11px 12px; border-radius:4px; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:8px; }
+.ru-sidebar button.active{ background:var(--ru-yellow); color:#2b2200; font-weight:700; }
+.ru-sidebar button:hover:not(.active){ background:rgba(255,255,255,.22); }
+.ru-content{ flex:1; padding:22px 24px; background:#fff; overflow:auto; }
+.ru-content h4{ font-family:var(--sans); font-size:17px; margin:0 0 4px; color:var(--ru-ink); }
+.ru-content .ru-desc{ font-size:12.5px; color:var(--ru-sub); margin-bottom:16px; }
+.ru-cards{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.ru-card{ border:1px solid var(--ru-line); border-radius:6px; overflow:hidden; }
+.ru-card-head{ background:#f2f7f7; padding:10px 14px; font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; color:var(--ru-ink); }
+.ru-card-body{ padding:12px 14px; }
+.ru-row{ display:flex; justify-content:space-between; padding:6px 0; font-size:12.5px; border-bottom:1px dashed var(--ru-line); }
+.ru-row:last-child{ border-bottom:none; }
+.ru-row .k{ color:var(--ru-sub); }
+.ru-row .v{ color:var(--ru-ink); font-weight:600; }
+.ru-field{ margin-bottom:16px; max-width:460px; }
+.ru-field label{ display:block; font-size:13px; margin-bottom:5px; color:var(--ru-ink); }
+.ru-field input[type=text],.ru-field input[type=password]{ width:100%; border:1px solid #c9d6d6; border-radius:4px; padding:8px 10px; font-size:13px; color:var(--ru-ink); }
+.ru-field .ru-check{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:8px; }
+.ru-btn{ background:var(--ru-teal); color:#fff; border:none; padding:9px 22px; border-radius:4px; font-size:13px; cursor:pointer; }
+.ru-toggle{ width:38px; height:20px; border-radius:20px; background:#ccd8d8; position:relative; display:inline-block; cursor:pointer; flex-shrink:0; }
+.ru-toggle::after{ content:''; position:absolute; width:16px; height:16px; border-radius:50%; background:#fff; top:2px; left:2px; box-shadow:0 1px 2px rgba(0,0,0,.3); }
+.ru-toggle.on{ background:var(--ru-teal); }
+.ru-toggle.on::after{ left:20px; }
+.ru-table{ width:100%; border-collapse:collapse; font-size:12.5px; margin-bottom:16px; }
+.ru-table th{ background:#f2f7f7; text-align:left; padding:8px 10px; color:var(--ru-sub); font-weight:600; border:1px solid var(--ru-line); }
+.ru-table td{ padding:8px 10px; border:1px solid var(--ru-line); color:var(--ru-ink); }
+.ru-note{ background:#f2f7f7; border-left:3px solid var(--ru-teal); padding:9px 12px; font-size:12px; color:var(--ru-sub); border-radius:0 4px 4px 0; }
+@media (max-width:640px){ .ru-body{ flex-direction:column; } .ru-sidebar{ width:100%; flex-direction:row; overflow-x:auto; } .ru-cards{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -599,7 +645,7 @@ const GROUPS = [
   { g:'I &middot; History of Networking', items:['hist-before','hist-waves','hist-computers','hist-packet','hist-arpanet','hist-protocols','hist-tcpip','hist-web','hist-dynamicweb','hist-scale','hist-reference'] },
   { g:'II &middot; Foundations', items:['foundations','layering','osimodel','perfmath'] },
   { g:'III &middot; Physical & Link', items:['physical','topology','muxswitch','datalink','mac','ethernet','vlan'] },
-  { g:'IV &middot; Network Layer', items:['ipnet','subnetting','nat','ipv6','arpicmpdhcp','routing','rip','ospf','bgp','mpls'] },
+  { g:'IV &middot; Network Layer', items:['ipnet','subnetting','nat','routeradmin','ipv6','arpicmpdhcp','routing','rip','ospf','bgp','mpls'] },
   { g:'V &middot; Transport', items:['transport','udp','tcp','quic'] },
   { g:'VI &middot; Application', items:['applayer','dns','http','tls','email','multimedia'] },
   { g:'VII &middot; Security', items:['secfund','crypto','firewalls','idsips','vpn','zerotrust'] },
@@ -1003,6 +1049,52 @@ sec('Types of NAT',
 sec('Why it exists, and what it breaks',
  `<p>NAT exists purely to conserve scarce public IPv4 addresses; as a side effect it also hides internal topology. Its cost is breaking the assumption that any two Internet hosts can address each other directly: a host behind NAT can't easily receive an unsolicited inbound connection, which is fatal for naive peer-to-peer protocols. <strong>NAT traversal</strong> techniques &mdash; <strong>STUN</strong> (discover your public mapping), <strong>TURN</strong> (relay traffic when direct connection is impossible), and <strong>ICE</strong> (try every candidate path and pick the best) &mdash; exist specifically to route around this, and underpin WebRTC voice/video calling.</p>`)
 ]);
+
+reg('routeradmin','12B','Inside a Router — The Admin Panel, Explained',
+'Every home and small-office router hides its entire job behind one web page. This chapter is a live, interactive replica of that admin panel — the same layout, tabs, and fields you\'d see logging into 192.168.0.1 — with every single field explained: what it means, why it exists, and which earlier NETLAB chapter it actually belongs to.',
+[
+sec('What a router actually is',
+ `<p>Strip away the marketing name and a consumer router is really <strong>five separate functions</strong> running on one box: a <strong>DHCP server</strong> (hands out LAN addresses), a <strong>NAT engine</strong> (translates your private LAN to one public WAN address), a <strong>firewall</strong> (blocks unsolicited inbound traffic by default), a <strong>Wi-Fi access point</strong> (bridges wireless stations onto the wired LAN), and a <strong>router</strong> in the strict sense &mdash; something that forwards packets between your LAN and your ISP\'s network. Every one of those five functions has its own settings page in the admin panel below, and every one of those functions was covered, mechanism by mechanism, somewhere earlier in this platform.</p>`),
+sec('Live replica — click around exactly like a real admin panel',
+ '<div id="tool-routeradmin"></div>'),
+sec('Reading the Status page like a network engineer',
+ `<p>The <strong>Internet</strong> card on the Status page is the single most information-dense place on the entire router. Walking through the real example values above:</p>`+
+ table(['Field','Value','What it actually means'],[
+  ['IP Address','192.168.66.117','The router\'s own WAN-side address — assigned to it by the ISP, just like your laptop\'s LAN address is assigned by this router'],
+  ['Default Gateway','192.168.66.25','This router\'s own next hop — usually the ISP\'s access router, one hop further upstream'],
+  ['Primary / Secondary DNS','192.168.66.25 / 192.168.66.1','The resolvers this router (and everything behind it, by default) will query — see the DNS chapter for the full resolution chain'],
+  ['Connection Type','Dynamic IP','This router is itself a DHCP <em>client</em> to the ISP — the exact DORA handshake covered in the DHCP chapter, just one layer further out'],
+ ])+
+ `<p>Notice the router runs the DHCP client role <em>upstream</em> (toward the ISP) and the DHCP server role <em>downstream</em> (toward your laptop and phone) at the same time — two completely independent instances of the same protocol, one on each side of the NAT boundary.</p>`),
+sec('Basic vs. Advanced tabs — what actually differs',
+ `<p>The <strong>Basic</strong> tab exposes only what a typical home user needs to touch: Wi-Fi name/password, guest network, and USB sharing. The <strong>Advanced</strong> tab exposes the same underlying settings plus everything a network engineer would actually reach for: static routes, port forwarding, QoS rules, firewall/ACL configuration, VLAN assignment on supported models, and detailed wireless radio parameters (channel width, transmit power, 802.11 mode). Nothing is functionally different between the tabs — Basic is simply Advanced with most of the dials hidden.</p>`),
+sec('Guest Network — segmentation for people who\'ve never heard the word "VLAN"',
+ `<p>The two checkboxes <strong>"Allow guests to see each other"</strong> and <strong>"Allow guests to access my local network"</strong> are, functionally, a consumer-friendly VLAN and firewall rule bundled into two tickboxes. Leaving both unchecked puts every guest device into its own isolated broadcast domain with a route only to the Internet — no path to your printer, your NAS, or your other devices. It is the exact same Zero Trust segmentation principle from the Zero Trust Networking chapter, just implemented at home-router scale with a UI instead of a CLI.</p>`),
+sec('USB Settings — the router as a tiny NAS',
+ `<p>A router with a USB port is quietly running a small file-sharing service (commonly SMB and/or FTP) directly on the router\'s own CPU. Every device on the LAN reaches attached storage through the router\'s own LAN IP address — the same client/server application-layer pattern as any other file-transfer protocol, just running on hardware most people only think of as "the box the Wi-Fi comes from."</p>`),
+sec('The four ways to let the outside world reach something inside (NAT Forwarding)',
+ table(['Feature','Scope','Trade-off'],[
+  ['Port Forwarding (Virtual Servers)','One external port → one internal IP:port, permanent','Narrow and predictable — the standard way to expose a home server'],
+  ['Port Triggering','Opens an external port only after matching outbound traffic','Safer than a static forward for games/VoIP with unpredictable inbound ports'],
+  ['DMZ','Exposes one entire device to all inbound traffic','Bypasses the firewall completely for that device — last resort only'],
+  ['UPnP','Lets applications open ports for themselves automatically','Most convenient, least controlled — an application can open more than you\'d have manually'],
+ ])+
+ `<p>All four exist to solve the identical problem raised in the NAT chapter: a private IP address can\'t normally receive a connection nobody inside asked for first. One real, commonly-hit quirk worth knowing: <strong>port 80 is permanently reserved for local admin access</strong> on most routers, so forwarding port 80 to an internal web server requires first moving the router\'s own remote-management port to something like 8080 — a conflict every major router vendor\'s own support documentation calls out explicitly.</p>`),
+sec('VPN Server and Dynamic DNS — reaching your own LAN from outside',
+ `<p>Many routers (TP-Link\'s Archer series among them) can run their own <strong>VPN Server</strong> &mdash; commonly OpenVPN and PPTP, with WireGuard increasingly available on newer firmware &mdash; turning the router itself into the far end of the tunnel described in the VPN chapter. Because a VPN server\'s own listening port has to be reachable from outside, actually using this feature almost always means combining it with a <strong>Port Forwarding</strong> rule and, since most home WAN addresses are dynamic (recall "Connection Type: Dynamic IP" on the Status page), a <strong>Dynamic DNS</strong> service so the router stays reachable under one fixed hostname even as its real IP changes underneath it.</p>`),
+sec('System Tools — the maintenance layer nobody thinks about until something breaks',
+ table(['Tool','What it actually does'],[
+  ['Firmware Upgrade','Installs a new version of the router\'s OS — always back up configuration first, since an interrupted upgrade is one of the most common causes of a hard factory reset'],
+  ['Backup & Restore','Saves/loads the entire configuration as a single .bin file'],
+  ['Time Settings','Syncs the router\'s clock via NTP — required for logs, schedules, and certificate validation to mean anything'],
+  ['System Log','A running record of DHCP leases, Wi-Fi associations, and firewall events — the router\'s own miniature version of the Observability chapter\'s logs'],
+  ['Reboot Schedule','Automatically restarts the router on a timer, a blunt but effective fix for slow memory leaks in consumer firmware'],
+  ['Factory Default Restore','Wipes all configuration back to the original defaults'],
+ ])),
+sec('The boot sequence this panel is quietly the result of',
+ flow(['Router powers on','Wi-Fi AP starts','DHCPv4 server starts','NAT engine starts','Firewall starts','IPv6 Router Advertisement starts','Routing table initialized','Router negotiates its own WAN connection with the ISP','Every value on the Status page above reflects the result of this sequence'])+
+ callout('','CROSS-REFERENCE','This exact sequence is traced packet-by-packet in the History → "Anatomy of One Page Load" chapter\'s Phase 0, and every individual mechanism (DHCP, NAT, ARP, DNS forwarding) has its own dedicated chapter in the Network Layer group.'))
+], {tool:'routeradmin'});
 
 reg('ipv6','13','IPv6',
 'IPv6 is not "IPv4 with more digits" &mdash; it rebuilds addressing, autoconfiguration, and neighbor discovery to solve exhaustion and simplify decades of IPv4 accretion at once.',
@@ -5745,6 +5837,211 @@ TOOLS.pktviewer = function(){
     const p = PKT_SAMPLES[+tr.dataset.i-1];
     document.getElementById('pvDecode').innerHTML = p.layers.map(l=>`<div class="lyr">&#9656; ${l}</div>`).join('');
   }));
+};
+
+/* --- Interactive router admin-panel replica --- */
+const RU_PAGES = {
+ status: { label:'Status', icon:'📊',
+  render: ()=> `<h4>Status</h4><div class="ru-desc">Internet status overview is displayed on this page.</div>
+   <div class="ru-cards">
+    <div class="ru-card"><div class="ru-card-head">🌐 Internet <span style="margin-left:auto;font-weight:400;color:var(--ru-sub);font-size:11px">IPv4 | IPv6</span></div>
+     <div class="ru-card-body">
+      ${ruRow('MAC Address','C4-E9-83-EF-59-3D')}${ruRow('IP Address','192.168.66.117')}${ruRow('Subnet Mask','255.255.255.0')}
+      ${ruRow('Default Gateway','192.168.66.25')}${ruRow('Primary DNS','192.168.66.25')}${ruRow('Secondary DNS','192.168.66.1')}${ruRow('Connection Type','Dynamic IP')}
+     </div></div>
+    <div class="ru-card"><div class="ru-card-head">📶 Wireless <span style="margin-left:auto;font-weight:400;color:var(--ru-sub);font-size:11px">2.4GHz | 5GHz</span></div>
+     <div class="ru-card-body">
+      ${ruRow('Network Name (SSID)','TP-Link_593D')}${ruRow('Wireless Radio','On')}${ruRow('Mode','802.11b/g/n mixed')}
+      ${ruRow('Channel Width','Auto')}${ruRow('Channel','Auto (Current Channel 6)')}${ruRow('MAC Address','C4-E9-83-EF-59-3C')}${ruRow('WDS Status','Disabled')}
+     </div></div>
+    <div class="ru-card"><div class="ru-card-head">🖧 LAN <span style="margin-left:auto;font-weight:400;color:var(--ru-sub);font-size:11px">IPv4 | IPv6</span></div>
+     <div class="ru-card-body">${ruRow('MAC Address','C4-E9-83-EF-59-3C')}${ruRow('IP Address','192.168.0.1')}${ruRow('Subnet Mask','255.255.255.0')}</div></div>
+    <div class="ru-card"><div class="ru-card-head">👥 Guest Network <span style="margin-left:auto;font-weight:400;color:var(--ru-sub);font-size:11px">2.4GHz | 5GHz</span></div>
+     <div class="ru-card-body">${ruRow('Network Name (SSID)','TP-Link_Guest_593C')}${ruRow('Hide SSID','Off')}</div></div>
+   </div>
+   <div class="ru-note" style="margin-top:14px">Every value here maps directly to a concept covered elsewhere on NETLAB: <b>IP Address / Subnet Mask / Gateway</b> → Subnetting & Routing chapters · <b>Primary/Secondary DNS</b> → DNS chapter · <b>MAC Address</b> → Ethernet chapter · <b>SSID/Channel/Mode</b> → Wireless Networking chapter.</div>` },
+ network: { label:'Network', icon:'🌐',
+  render: ()=> `<h4>Internet</h4><div class="ru-desc">WAN connection type and IP configuration.</div>
+   <div class="ru-field"><label>Connection Type</label><select style="width:100%;padding:8px;border:1px solid #c9d6d6;border-radius:4px;font-size:13px"><option>Dynamic IP</option><option>Static IP</option><option>PPPoE</option><option>L2TP / PPTP</option></select></div>
+   <h4 style="margin-top:22px">Operation Mode</h4><div class="ru-desc">The single dropdown that decides what this box even <em>is</em> on the network.</div>
+   <div class="ru-field"><label>Mode</label><select style="width:100%;padding:8px;border:1px solid #c9d6d6;border-radius:4px;font-size:13px"><option>Router</option><option>Access Point</option><option>Range Extender</option><option>WISP Client</option></select></div>
+   <table class="ru-table"><thead><tr><th>Mode</th><th>What it actually does</th></tr></thead><tbody>
+    <tr><td>Router</td><td>Runs full DHCP + NAT + firewall — the normal mode, and everything else on this page assumes it</td></tr>
+    <tr><td>Access Point</td><td>Disables DHCP/NAT and just bridges Wi-Fi onto an existing wired LAN — an upstream router still owns addressing</td></tr>
+    <tr><td>Range Extender</td><td>Repeats an existing Wi-Fi signal further, usually re-using or extending the same SSID</td></tr>
+    <tr><td>WISP Client</td><td>Connects to another Wi-Fi network as its own WAN uplink, useful where wired ISP service isn't available</td></tr>
+   </tbody></table>
+   <h4 style="margin-top:22px">Dynamic DNS</h4><div class="ru-desc">Keeps a fixed hostname pointed at a WAN IP that the ISP can change at any time.</div>
+   <div class="ru-field"><label>Service Provider</label><select style="width:100%;padding:8px;border:1px solid #c9d6d6;border-radius:4px;font-size:13px"><option>No-IP</option><option>DynDNS</option><option>TP-Link DDNS</option></select></div>
+   <div class="ru-note">This whole page is why "Dynamic IP" on Status matters: since most home WAN addresses aren't fixed, remote access to anything on this router (a VPN server, a forwarded port, remote admin) usually needs Dynamic DNS to stay reachable under one unchanging name.</div>` },
+ wireless: { label:'Wireless Settings', icon:'📶',
+  render: ()=> `<h4>Smart Connect</h4><div class="ru-desc">Smart Connect allows your mobile device to automatically switch connection to the Wi-Fi band that provides the fastest speed.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle"></span> Smart Connect</div></div>
+   <h4 style="margin-top:22px">Wireless Settings</h4>
+   <div class="ru-cards">
+    <div>
+     <div class="ru-field"><div class="ru-check"><input type="checkbox" checked disabled> Enable Wireless Radio (2.4GHz)</div></div>
+     <div class="ru-field"><label>Network Name (SSID)</label><input type="text" value="TP-Link_593D"></div>
+     <div class="ru-field"><label>Password</label><input type="password" placeholder="········"></div>
+    </div>
+    <div>
+     <div class="ru-field"><div class="ru-check"><input type="checkbox" checked disabled> Enable Wireless Radio (5GHz)</div></div>
+     <div class="ru-field"><label>Network Name (SSID)</label><input type="text" value="TP-Link_593D_5G"></div>
+     <div class="ru-field"><label>Password</label><input type="password" placeholder="········"></div>
+    </div>
+   </div>
+   <button class="ru-btn">Save</button>
+   <h4 style="margin-top:22px">WPS</h4><div class="ru-desc">Push-button or PIN pairing — trades a typed password for physical proximity as the proof of authorization.</div>
+   <h4 style="margin-top:14px">Additional Settings</h4>
+   <table class="ru-table"><tbody>
+    <tr><td>Beacon Interval</td><td>100 ms</td></tr>
+    <tr><td>RTS Threshold</td><td>2346</td></tr>
+    <tr><td>Fragmentation Threshold</td><td>2346</td></tr>
+    <tr><td>Transmit Power</td><td>High</td></tr>
+   </tbody></table>
+   <div class="ru-note" style="margin-top:14px">Two SSIDs, one router: the 2.4GHz radio favors range and wall penetration; 5GHz favors raw throughput at shorter range — both are covered in the Wireless Networking chapter's Wi-Fi generations table. RTS/Fragmentation thresholds are the exact hidden-node and interference mitigations covered there too.</div>` },
+ guest: { label:'Guest Network', icon:'👥',
+  render: ()=> `<h4>Guest Network</h4><div class="ru-desc">Give visitors Internet access without exposing your main LAN.</div>
+   <div class="ru-field"><div class="ru-check"><input type="checkbox"> Allow guests to see each other</div>
+   <div class="ru-check"><input type="checkbox"> Allow guests to access my local network</div></div>
+   <div class="ru-cards">
+    <div><div class="ru-field"><div class="ru-check"><input type="checkbox"> Enable Guest Network (2.4GHz)</div></div>
+     <div class="ru-field"><label>Network Name (SSID)</label><input type="text" placeholder=""></div>
+     <div class="ru-field"><label>Password</label><input type="password" placeholder=""></div></div>
+    <div><div class="ru-field"><div class="ru-check"><input type="checkbox"> Enable Guest Network (5GHz)</div></div>
+     <div class="ru-field"><label>Network Name (SSID)</label><input type="text" placeholder=""></div>
+     <div class="ru-field"><label>Password</label><input type="password" placeholder=""></div></div>
+   </div>
+   <button class="ru-btn">Save</button>
+   <div class="ru-note" style="margin-top:14px">This checkbox pair is literally the Zero Trust / VLAN segmentation idea from earlier chapters, implemented as two tickboxes: leaving both <b>unchecked</b> puts guest devices in their own isolated broadcast domain with only Internet egress — no path to your printers, NAS, or other devices.</div>` },
+ natforward: { label:'NAT Forwarding', icon:'🔀',
+  render: ()=> `<h4>Port Forwarding (Virtual Servers)</h4><div class="ru-desc">Permanently maps one external port to one internal device — the only way an outside device can reach something on your LAN that didn't ask for the connection first.</div>
+   <table class="ru-table"><thead><tr><th>Service Type</th><th>External Port</th><th>Internal IP</th><th>Internal Port</th><th>Protocol</th><th>Status</th></tr></thead>
+   <tbody><tr><td>HTTP Server</td><td>8080</td><td>192.168.0.105</td><td>80</td><td>TCP</td><td>Enabled</td></tr></tbody></table>
+   <button class="ru-btn" style="margin-bottom:20px">+ Add New</button>
+   <h4>Port Triggering</h4><div class="ru-desc">Opens an external port only <em>after</em> a device on the LAN first sends outbound traffic on a matching trigger port — safer than a permanently-open forward, used for games/VoIP that need an unpredictable inbound port.</div>
+   <h4 style="margin-top:20px">DMZ</h4><div class="ru-desc">Exposes one entire device to all inbound traffic, bypassing the firewall completely for that one IP.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle"></span> Enable DMZ</div><label>DMZ Host IP Address</label><input type="text" placeholder="192.168.0.x"></div>
+   <h4 style="margin-top:20px">UPnP</h4><div class="ru-desc">Lets an application (a game, a torrent client) ask the router to open a port for itself automatically — convenient, but the least controlled of the four options here.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle on"></span> Enable UPnP</div></div>
+   <div class="ru-note">All four of these exist to solve the exact NAT problem from the NAT chapter: a private address can't normally receive an unsolicited inbound connection. Each option trades a different amount of convenience for a different amount of exposure — Port Forwarding is narrowest (one port, one device), DMZ is broadest (every port, one device).</div>` },
+ qos: { label:'QoS', icon:'⚡',
+  render: ()=> `<h4>Quality of Service</h4><div class="ru-desc">Prioritizes traffic classes when the link is congested, so gaming or a video call doesn't stall behind a large download.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle on"></span> Enable QoS</div></div>
+   <div class="ru-cards"><div class="ru-field"><label>Upload Bandwidth (Mbps)</label><input type="text" value="50"></div><div class="ru-field"><label>Download Bandwidth (Mbps)</label><input type="text" value="300"></div></div>
+   <table class="ru-table"><thead><tr><th>Device / Application</th><th>Priority</th></tr></thead><tbody>
+    <tr><td>Gaming Console</td><td>High</td></tr><tr><td>Work Laptop (video calls)</td><td>High</td></tr><tr><td>Smart TV (streaming)</td><td>Medium</td></tr><tr><td>Guest devices</td><td>Low</td></tr>
+   </tbody></table>
+   <div class="ru-note">A home-router-scale version of the queueing and traffic-prioritization concepts covered in Load Balancing and Performance Engineering — the bandwidth fields must roughly match your real plan speed, or the router is prioritizing against the wrong ceiling entirely.</div>` },
+ security: { label:'Security', icon:'🛡️',
+  render: ()=> `<h4>Firewall</h4>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle on"></span> SPI Firewall</div></div>
+   <h4 style="margin-top:18px">DoS Protection</h4>
+   <div class="ru-field"><div class="ru-check"><input type="checkbox" checked disabled> ICMP-Flood Attack Filtering</div>
+   <div class="ru-check"><input type="checkbox" checked disabled> UDP-Flood Attack Filtering</div>
+   <div class="ru-check"><input type="checkbox" checked disabled> TCP-SYN-Flood Attack Filtering</div></div>
+   <h4 style="margin-top:18px">Access Control</h4><div class="ru-desc">Allow or block specific devices by MAC address.</div>
+   <h4 style="margin-top:18px">IP &amp; MAC Binding</h4><div class="ru-desc">Locks a chosen IP to one specific MAC address — the router will refuse to hand that IP to any other device, and can optionally block that MAC entirely if it shows up with a different IP (a common anti-ARP-spoofing measure).</div>
+   <h4 style="margin-top:18px">Remote Management</h4>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle"></span> Enable Remote Management</div><label>Web Management Port</label><input type="text" placeholder="8080" value="8080"></div>
+   <div class="ru-note">SPI (Stateful Packet Inspection) and DoS filtering are the exact stateful-firewall concepts from the Firewalls chapter. The management port field exists because port 80 is reserved for local admin access — if you forward port 80 to a local web server, remote router admin has to move to a different port like 8080 first, a real conflict every TP-Link support guide calls out explicitly.</div>` },
+ parental: { label:'Parental Controls', icon:'👨‍👩‍👧',
+  render: ()=> `<h4>Parental Controls</h4><div class="ru-desc">Create a profile per family member, assign their devices, and restrict what and when they can go online.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle on"></span> Enable Parental Controls</div></div>
+   <table class="ru-table"><thead><tr><th>Profile</th><th>Devices</th><th>Status</th></tr></thead><tbody>
+    <tr><td>Teen's Profile</td><td>2 devices</td><td>Active</td></tr>
+    <tr><td>Kid's Profile</td><td>1 device</td><td>Paused ⏸</td></tr>
+   </tbody></table>
+   <button class="ru-btn" style="margin-bottom:20px">+ Add Profile</button>
+   <h4>Website Filtering</h4>
+   <div class="ru-field"><label>Filtering Policy</label><select style="width:100%;padding:8px;border:1px solid #c9d6d6;border-radius:4px;font-size:13px"><option>Blacklist — block only the sites/keywords listed</option><option>Whitelist — allow only the sites/keywords listed</option></select></div>
+   <div class="ru-field"><label>Blocked keywords (up to 32 per profile)</label><input type="text" placeholder="e.g. gambling, adult-content"></div>
+   <h4 style="margin-top:18px">Internet Access Time</h4><div class="ru-desc">Drag across a weekly time grid to mark allowed hours; outside that window the profile's devices simply can't reach the Internet — a bedtime, enforced by the router instead of an argument.</div>
+   <h4 style="margin-top:18px">Pause Internet</h4><div class="ru-desc">One button that instantly cuts a profile's access regardless of remaining time — and doesn't consume any of that profile's allowed hours while paused.</div>
+   <div class="ru-note" style="margin-top:14px">Every rule here is enforced by matching the device's <b>MAC address</b> — the exact Layer-2 identity concept from the Ethernet chapter. The one real caveat every TP-Link support doc repeats: phones with <b>randomized/private MAC addresses</b> can appear as a brand-new, unrestricted device each time they reconnect, silently bypassing the profile until private-MAC is turned off for that Wi-Fi network on the device itself.</div>` },
+ vpn: { label:'VPN Server', icon:'🔐',
+  render: ()=> `<h4>VPN Server</h4><div class="ru-desc">Turns this router into a VPN endpoint so a device out in the world can tunnel back in and look like it's on your home LAN.</div>
+   <table class="ru-table"><thead><tr><th>Type</th><th>Status</th><th>Note</th></tr></thead><tbody>
+    <tr><td>OpenVPN</td><td><span class="ru-toggle"></span></td><td>Strong, widely supported, needs a client app</td></tr>
+    <tr><td>PPTP</td><td><span class="ru-toggle"></span></td><td>Simple to set up, weaker encryption — legacy option</td></tr>
+    <tr><td>WireGuard</td><td><span class="ru-toggle"></span></td><td>Modern, fast, minimal — available on newer router firmware</td></tr>
+   </tbody></table>
+   <div class="ru-note">This is the exact VPN tunnel model from the VPN chapter, just with your own router as one endpoint instead of a corporate gateway. Note the VPN server's own port still has to be reachable — that usually means a Port Forwarding rule (see NAT Forwarding) plus Dynamic DNS (see Network), since most home WAN IPs change over time.</div>` },
+ usb: { label:'USB Settings', icon:'🔌',
+  render: ()=> `<h4>Device Settings</h4><div class="ru-desc">Attached USB storage, shared across the local network.</div>
+   <button class="ru-btn" style="margin-bottom:16px">Scan</button>
+   ${['Kingston 100GB','Kingston 102GB','Kingston 101GB'].map(name=>`
+     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b style="font-size:13.5px">${name}</b><span style="color:var(--ru-teal);font-size:12px">⇥ Safely Remove</span></div>
+     <table class="ru-table"><thead><tr><th>ID</th><th>Volume</th><th>Capacity</th><th>Free Space</th><th>Status</th></tr></thead><tbody><tr><td>--</td><td>--</td><td>--</td><td>--</td><td>--</td></tr></tbody></table>
+   `).join('')}
+   <h4 style="margin-top:20px">Sharing Access</h4><div class="ru-desc">Controls who on the LAN can read/write the attached drive — a share can be open to everyone, or locked to specific accounts with a username and password.</div>
+   <h4 style="margin-top:18px">Print Server</h4><div class="ru-desc">Turns a USB printer plugged into the router into a shared network printer, reachable by every device on the LAN without any one computer having to stay on and share it.</div>
+   <div class="ru-note">A router with a USB port doubles as a tiny NAS (Network-Attached Storage) — the router itself runs an SMB/FTP file-sharing service, and any device on the LAN reaches it via the router's own LAN IP, the same request/response model as any other application-layer file protocol.</div>` },
+ systools: { label:'System Tools', icon:'🛠️',
+  render: ()=> `<h4>Firmware Upgrade</h4><div class="ru-desc">Current version: 1.2.3 Build 20260214</div>
+   <button class="ru-btn" style="margin-bottom:20px">Check for Upgrade</button>
+   <h4>Backup &amp; Restore</h4><div class="ru-desc">Save the router's entire configuration to a .bin file, or reload one.</div>
+   <div style="display:flex;gap:10px;margin-bottom:20px"><button class="ru-btn">Backup</button><button class="ru-btn" style="background:var(--ru-sub)">Restore</button></div>
+   <h4>Time Settings</h4>
+   <div class="ru-field"><label>Time Zone</label><select style="width:100%;padding:8px;border:1px solid #c9d6d6;border-radius:4px;font-size:13px"><option>NTP Server (automatic)</option><option>Set manually</option></select></div>
+   <h4 style="margin-top:20px">System Log</h4><div class="ru-desc">A scrolling record of DHCP leases, Wi-Fi associations, WAN reconnects, and firewall events — the router's own equivalent of the logs covered in the Observability chapter.</div>
+   <h4 style="margin-top:20px">Reboot Schedule</h4><div class="ru-field"><div class="ru-check"><span class="ru-toggle"></span> Reboot the router automatically on a schedule</div></div>
+   <h4 style="margin-top:20px">Factory Default Restore</h4>
+   <button class="ru-btn" style="background:var(--danger)">Restore Factory Defaults</button>
+   <div class="ru-note" style="margin-top:16px">Always back up before a firmware upgrade — an interrupted upgrade or a config format mismatch after upgrading is one of the most common ways a router ends up needing a full factory reset.</div>` },
+ cloud: { label:'TP-Link Cloud', icon:'☁️',
+  render: ()=> `<h4>TP-Link ID</h4><div class="ru-desc">Binds this router to a cloud account so it can be managed from outside your home network.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle on"></span> Bind with TP-Link ID</div><label>Email</label><input type="text" value="you@example.com" disabled></div>
+   <h4 style="margin-top:20px">Cloud Services</h4>
+   <table class="ru-table"><thead><tr><th>Service</th><th>Status</th></tr></thead><tbody>
+    <tr><td>Remote Management (Tether app)</td><td>Bound</td></tr>
+    <tr><td>Firmware auto-update notifications</td><td>Enabled</td></tr>
+   </tbody></table>
+   <div class="ru-note">Remote management always means opening a controlled path from the public Internet back into a device on your private LAN — TP-Link's cloud relay avoids you having to forward a port yourself, but it's still worth the same scrutiny as any other exposed service, since it's now the account credentials (not just the local admin password) that gate access to your router.</div>` },
+ mesh: { label:'OneMesh', icon:'🕸️',
+  render: ()=> `<h4>OneMesh</h4><div class="ru-desc">Combine this router with compatible range extenders/access points into one seamless Wi-Fi network.</div>
+   <div class="ru-field"><div class="ru-check"><span class="ru-toggle on"></span> Enable OneMesh</div></div>
+   <table class="ru-table"><thead><tr><th>Device</th><th>Role</th><th>Status</th></tr></thead><tbody>
+    <tr><td>This router</td><td>Host</td><td>Online</td></tr>
+    <tr><td>RE500X (bedroom)</td><td>OneMesh Extender</td><td>Online, connected via 5GHz backhaul</td></tr>
+   </tbody></table>
+   <button class="ru-btn" style="margin:14px 0">+ Add OneMesh Device (WPS)</button>
+   <div class="ru-note">Every OneMesh extender <b>clones the router's own SSID and password</b> automatically the moment it joins — you never configure Wi-Fi twice. A client device roams between the router and any extender by picking whichever currently gives it the strongest signal, the same seamless-roaming idea covered for enterprise Wi-Fi in the Wireless Networking chapter, just self-configuring at consumer scale. Enabling <b>Smart Connect</b> first (see Wireless Settings) is recommended so 2.4GHz and 5GHz also share one name across the whole mesh.</div>` },
+};
+function ruRow(k,v){ return `<div class="ru-row"><span class="k">${k}:</span><span class="v">${v}</span></div>`; }
+function ruSimple(title,body){ return `<h4>${title}</h4><div class="ru-desc" style="max-width:600px">${body}</div><div class="ru-note">This page is summarized rather than field-by-field replicated — the concept above is the part worth understanding; the exact toggles vary by router model/firmware.</div>`; }
+TOOLS.routeradmin = function(){
+  const el = document.getElementById('tool-routeradmin'); if(!el) return;
+  el.innerHTML = `<div class="routerui">
+    <div class="ru-topbar">
+      <div class="ru-brand">tp-link</div>
+      <div class="ru-tabs">
+        <button data-tab="quick">Quick Setup</button>
+        <button data-tab="basic">Basic</button>
+        <button data-tab="advanced" class="active">Advanced</button>
+      </div>
+      <div class="ru-actions"><span>English ⌄</span><span>⎋ Logout</span><span>⟳ Reboot</span></div>
+    </div>
+    <div class="ru-body">
+      <div class="ru-sidebar" id="ruSidebar"></div>
+      <div class="ru-content" id="ruContent"></div>
+    </div>
+  </div>`;
+  const order = ['status','network','wireless','guest','natforward','qos','security','parental','vpn','usb','systools','cloud','mesh'];
+  const sidebar = document.getElementById('ruSidebar');
+  function renderSidebar(active){
+    sidebar.innerHTML = order.map(k=>`<button data-k="${k}" class="${k===active?'active':''}">${RU_PAGES[k].icon} ${RU_PAGES[k].label}</button>`).join('');
+    sidebar.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ show(b.dataset.k); }));
+  }
+  function show(k){
+    document.getElementById('ruContent').innerHTML = RU_PAGES[k].render();
+    renderSidebar(k);
+    document.getElementById('ruContent').querySelectorAll('.ru-toggle').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+  }
+  el.querySelectorAll('.ru-tabs button').forEach(b=>b.addEventListener('click',()=>{
+    el.querySelectorAll('.ru-tabs button').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+  }));
+  show('status');
 };
 
 /* ---------------- 6. Quiz engine ---------------- */
